@@ -1,0 +1,2 @@
+
+int lorteFunction(void);

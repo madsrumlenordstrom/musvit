@@ -1,0 +1,12 @@
+target/
+test_run_dir/
+project/project/
+project/target/
+rtl/
+.metals/
+.bloop/
+.vscode/
+.idea/
+.bsp/
+config.mk
+metals.sbt
