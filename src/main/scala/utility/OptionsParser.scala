@@ -5,6 +5,8 @@ import scala.sys.exit
 import java.io.File
 import os.PathError
 import musvit.MusvitConfig
+import java.nio.file.Files
+import java.nio.file.Paths
 
 case class Config (
   firrtlOpts:     Array[String] = Array(),
@@ -22,7 +24,7 @@ object OptionsParser {
         head("Musvit generator", "0.1"),
         help('h', "help").text("Prints this message"),
 
-        opt[File]('r', "rom-contents")
+        opt[String]('r', "rom-contents")
           .required()
           .text("Binary file of contents to put in boot ROM of Musvit")
           .valueName("<file>")
@@ -33,6 +35,11 @@ object OptionsParser {
           .text("Clock frequency of Musvit")
           .valueName("<value>")
           .action((value, config) => config.copy(musvitConfig = config.musvitConfig.copy(clockFrequency = value))),
+
+        opt[Int]('w', "fetch-width")
+          .text("Number of instruction fetched every memory access")
+          .valueName("<value>")
+          .action((value, config) => config.copy(musvitConfig = config.musvitConfig.copy(fetchWidth = value))),
 
         opt[String]('f', "firrtl-opts")
           .optional()
@@ -47,11 +54,10 @@ object OptionsParser {
           .action((value, config) => config.copy(firtoolOpts = value.split(" "))),
 
         checkConfig(config => {
-          if (!config.musvitConfig.romContents.exists() || config.musvitConfig.romContents.isDirectory()) {
-            failure("ERROR: " + config.musvitConfig.romContents.toPath() + " is not a file")
-          } else {
-            success
+          if (!Files.exists(Paths.get(config.musvitConfig.romContents)) || Files.isDirectory(Paths.get(config.musvitConfig.romContents))) {
+            failure("ERROR: " + config.musvitConfig.romContents + " is not a file")
           }
+          success
         })
       )
     }
@@ -66,7 +72,7 @@ object OptionsParser {
 
   def printOptions(args: Array[String]): Unit = {
     val options = getOptions(args)
-    print("ROM contents:    " + options.musvitConfig.romContents.toString() + "\n")
+    print("ROM contents:    " + options.musvitConfig.romContents + "\n")
     print("FIRRTL options:  ")
     options.firrtlOpts.map(opt => print(opt + " "))
     print("\n")
