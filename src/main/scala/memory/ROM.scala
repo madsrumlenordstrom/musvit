@@ -14,9 +14,6 @@ object ROM {
 }
 
 class ROM(contents: Seq[UInt]) extends Module {
-  // Get ROM data
-  // val wordSeq = fileToWordSeq(romContents, width, 0.U(BYTE_WIDTH.W))
-
   val io = IO(new ReadIO(contents.length.toLong, contents.head.getWidth))
 
   val rom = VecInit(contents)

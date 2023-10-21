@@ -7,21 +7,24 @@ import java.io.File
 import Constants._
 
 object Functions {
-  def fileToByteSeq(path: String): Seq[UInt] = {
+  def fileToBigIntBytes(path: String): Seq[BigInt] = {
     Files
       .readAllBytes((new File(path)).toPath())
       .map(_ & 0xff)
-      .map(_.asUInt(BYTE_WIDTH.W))
+      .map(BigInt(_))
       .toSeq
   }
 
-  def fileToWordSeq(path: String, width: Int, padding: UInt): Seq[UInt] = {
-    if (width % BYTE_WIDTH != 0)
-      throw new Error("width must be a multiple of " + BYTE_WIDTH)
-    fileToByteSeq(path).iterator
-      .grouped(width / BYTE_WIDTH)
+  def fileToUInts(path: String, widthBytes: Int, padding: BigInt): Seq[UInt] = {
+    fileToBigIntBytes(path).iterator
+      .grouped(widthBytes)
       .withPadding(padding)
-      .map(_.reduceLeft(_ ## _))
+      .map(
+        _.zipWithIndex
+          .map { case (lort, i) => (lort << (i * BYTE_WIDTH)) }
+          .reduce(_ + _)
+          .asUInt((widthBytes * BYTE_WIDTH).W)
+      )
       .toSeq
   }
 

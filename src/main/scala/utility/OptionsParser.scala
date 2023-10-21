@@ -24,11 +24,11 @@ object OptionsParser {
         head("Musvit generator", "0.1"),
         help('h', "help").text("Prints this message"),
 
-        opt[String]('r', "rom-contents")
+        opt[String]('r', "rom-file")
           .required()
           .text("Binary file of contents to put in boot ROM of Musvit")
           .valueName("<file>")
-          .action((value, config) => config.copy(musvitConfig = config.musvitConfig.copy(romContents = value))),
+          .action((value, config) => config.copy(musvitConfig = config.musvitConfig.copy(romFile = value))),
 
         opt[Int]('c', "clock-frequency")
           .required()
@@ -54,8 +54,8 @@ object OptionsParser {
           .action((value, config) => config.copy(firtoolOpts = value.split(" "))),
 
         checkConfig(config => {
-          if (!Files.exists(Paths.get(config.musvitConfig.romContents)) || Files.isDirectory(Paths.get(config.musvitConfig.romContents))) {
-            failure("ERROR: " + config.musvitConfig.romContents + " is not a file")
+          if (!Files.exists(Paths.get(config.musvitConfig.romFile)) || Files.isDirectory(Paths.get(config.musvitConfig.romFile))) {
+            failure("ERROR: " + config.musvitConfig.romFile + " is not a file")
           }
           success
         })
@@ -72,7 +72,7 @@ object OptionsParser {
 
   def printOptions(args: Array[String]): Unit = {
     val options = getOptions(args)
-    print("ROM contents:    " + options.musvitConfig.romContents + "\n")
+    print("ROM file:        " + options.musvitConfig.romFile + "\n")
     print("FIRRTL options:  ")
     options.firrtlOpts.map(opt => print(opt + " "))
     print("\n")
