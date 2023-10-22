@@ -15,20 +15,25 @@ object Functions {
       .toSeq
   }
 
-  def fileToUInts(path: String, widthBytes: Int, padding: BigInt): Seq[UInt] = {
+  def fileToUInts(path: String, width: Int): Seq[UInt] = {
+    if (width % BYTE_WIDTH != 0) throw new Error("width must be a multiple of " + BYTE_WIDTH)
     fileToBigIntBytes(path).iterator
-      .grouped(widthBytes)
-      .withPadding(padding)
+      .grouped(width / BYTE_WIDTH)
+      .withPadding(BigInt(0))
       .map(
         _.zipWithIndex
           .map { case (lort, i) => (lort << (i * BYTE_WIDTH)) }
           .reduce(_ + _)
-          .asUInt((widthBytes * BYTE_WIDTH).W)
+          .asUInt(width.W)
       )
       .toSeq
   }
 
   def bitWidthToUIntMax(width: Int) = ((1L << width.toLong) - 1L)
+
+  def uintToHexString(uint: UInt): String = {
+    "%0".concat(((uint.getWidth / BYTE_WIDTH) * 2).toString()).concat("X").format(uint.litValue)
+  }
 }
 
 object RisingEdge {
