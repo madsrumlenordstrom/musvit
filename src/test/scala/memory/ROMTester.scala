@@ -11,7 +11,7 @@ import utility.Functions._
 import musvit.MusvitConfig
 
 class ROMTester extends AnyFlatSpec with ChiselScalatestTester {
-  val testFile = "sw/build/add.bin"
+  val testFile = "random"
   val width = INST_WIDTH
   val contents = fileToUInts(testFile, INST_WIDTH)
   val formatStr = "0x%08X %0" + ((width / BYTE_WIDTH) * 2) + "X"
@@ -32,7 +32,7 @@ class ROMTester extends AnyFlatSpec with ChiselScalatestTester {
 }
 
 class MusvitROMTester extends AnyFlatSpec with ChiselScalatestTester {
-  val config = MusvitConfig(fetchWidth = 2, romFile = "sw/build/blinky.bin", romSize = 0x2000)
+  val config = MusvitConfig(fetchWidth = 2, romFile = "random", romSize = 0x2000)
   
   "MusvitROM" should "pass" in {
     test(new MusvitROM(config)).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>

@@ -10,3 +10,4 @@ rtl/
 .bsp/
 config.mk
 metals.sbt
+random

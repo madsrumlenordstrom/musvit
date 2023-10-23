@@ -78,6 +78,10 @@ test: $(SRCS) $(TESTS)
 testall: $(SRCS) $(TESTS)
 	$(SBT) $(SBTFLAGS) test
 
+# Create a file with random data (useful for testing)
+random:
+	dd if=/dev/random of=random count=8
+
 # Shutdown SBT server
 .PHONY: shutdown
 shutdown:
@@ -87,7 +91,7 @@ shutdown:
 .PHONY: clean
 clean: shutdown
 	@echo "Cleaning workspace"
-	$(RM) -rf $(RTLDIR) test_run_dir/ target/ project/target project/project
+	$(RM) -rf $(RTLDIR) test_run_dir/ target/ project/target project/project random
 	$(MAKE) -C $(SWDIR) clean
 	$(MAKE) -C $(SYNTHDIR) clean
 
