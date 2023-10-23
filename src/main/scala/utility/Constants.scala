@@ -6,4 +6,5 @@ object Constants {
   val ADDR_WIDTH = 32
   val BYTE_WIDTH = 8
   val BYTES_PER_INST = INST_WIDTH / BYTE_WIDTH
+  val BYTES_PER_DATA = DATA_WIDTH / BYTE_WIDTH
 }

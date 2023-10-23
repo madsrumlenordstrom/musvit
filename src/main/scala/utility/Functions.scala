@@ -42,6 +42,13 @@ object RisingEdge {
   }
 }
 
+object BitsToByteVec {
+  def apply[T <: Bits](data: T): Vec[T] = {
+    require(data.getWidth % BYTE_WIDTH == 0)
+    VecInit(data.asBools.grouped(BYTE_WIDTH).map(VecInit(_).asTypeOf(data)).toSeq)
+  }
+}
+
 object BarrelShifter {
   private trait ShiftType
 
