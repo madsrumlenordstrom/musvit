@@ -55,7 +55,7 @@ class MusvitROM(config: MusvitConfig) extends Module {
     .map(_._2)
 
   // Create ROMS
-  val roms = Seq.tabulate(config.fetchWidth)((i) => ROM(contentsSeqs(i)))
+  val roms = Seq.tabulate(config.fetchWidth)((i) => VecInit(contentsSeqs(i)))
 
   // Addresses
   val byteOffset = io.addr(log2Up(BYTES_PER_INST) - 1, 0)
@@ -66,18 +66,17 @@ class MusvitROM(config: MusvitConfig) extends Module {
   assert(byteOffset === 0.U, "Bytes indexing in MusvitROM is not supported")
   dontTouch(byteOffset)
   
-  val shamtReg = RegEnable(shamt, 0.U(log2Up(config.fetchWidth).W), io.en)
+  //val shamtReg = RegEnable(shamt, 0.U(log2Up(config.fetchWidth).W), io.en)
   val increTable = VecInit.tabulate(
     config.fetchWidth, config.fetchWidth)((romIdx, i) => (romIdx < i).B.asUInt)
 
   // Increment addresses
-  roms.foreach(_.io.en.:=(io.en))
-  roms.zipWithIndex.foreach { case (rom, i) =>
-    rom.io.addr.:=(addr + increTable(i)(shamt))
+  val data = roms.zipWithIndex.map { case (rom, i) =>
+    rom(addr + increTable(i)(shamt))
   }
 
   // Rotate data
-  io.data := BarrelShifter.leftRotate(VecInit(roms.map(_.io.data)), shamtReg)
+  io.data := BarrelShifter.leftRotate(VecInit(data), shamt)
 }
 
 object MusvitROM {

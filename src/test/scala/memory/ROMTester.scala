@@ -44,15 +44,15 @@ class MusvitROMTester extends AnyFlatSpec with ChiselScalatestTester {
 
         val addr = (i * BYTES_PER_INST).asUInt(ADDR_WIDTH.W)
         dut.io.addr.poke(addr)
-        dut.clock.step(1)
-
+        
         print("0x%s ".format(uintToHexString(addr)))
         for (j <- 0 until config.fetchWidth) {
           dut.io.data(j).expect(dut.contents(i + j))
           print("%s ".format(uintToHexString(dut.io.data(j).peek())))
         }
-        
         println()
+        
+        dut.clock.step(1)
       }
     }
   }
