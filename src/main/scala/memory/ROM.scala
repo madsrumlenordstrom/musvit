@@ -58,9 +58,10 @@ class MusvitROM(config: MusvitConfig) extends Module {
   val roms = Seq.tabulate(config.fetchWidth)((i) => VecInit(contentsSeqs(i)))
 
   // Addresses
-  val byteOffset = io.addr(log2Up(BYTES_PER_INST) - 1, 0)
-  val shamt      = io.addr(log2Up(config.fetchWidth) + byteOffset.getWidth - 1, byteOffset.getWidth)
-  val addr       = io.addr(io.addr.getWidth - 1, shamt.getWidth + byteOffset.getWidth)
+  val relaAddr   = io.addr - config.romAddr.U
+  val byteOffset = relaAddr(log2Up(BYTES_PER_INST) - 1, 0)
+  val shamt      = relaAddr(log2Up(config.fetchWidth) + byteOffset.getWidth - 1, byteOffset.getWidth)
+  val addr       = relaAddr(relaAddr.getWidth - 1, shamt.getWidth + byteOffset.getWidth)
 
   // No support for byte indexing
   assert(byteOffset === 0.U, "Bytes indexing in MusvitROM is not supported")
