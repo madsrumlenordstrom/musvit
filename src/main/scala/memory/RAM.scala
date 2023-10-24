@@ -7,10 +7,7 @@ import chisel3.util.experimental.decode._
 import musvit.MusvitConfig
 import musvit.common.OpCodes
 import utility.Constants._
-import utility.BitsToByteVec
-import utility.BarrelShifter
-import utility.SignExtend
-import utility.ZeroExtend
+import utility.{BitsToByteVec, BarrelShifter, SignExtend}
 
 class RAMIO(size: Int, width: Int) extends Bundle {
   val readAddr      = Input(UInt(log2Up(size).W))

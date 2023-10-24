@@ -3,10 +3,10 @@ package memory
 import chisel3._
 import chisel3.util.{log2Up, RegEnable, isPow2}
 
+import musvit.MusvitConfig
 import utility.Functions._
 import utility.Constants._
 import utility.BarrelShifter
-import musvit.MusvitConfig
 
 object ROM {
   def apply(contents: Seq[UInt]) = {
