@@ -1,2 +1,2 @@
 
-int lorteFunction(void);
+int exampleFunction(void);
