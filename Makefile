@@ -31,14 +31,14 @@ BOARD      ?=
 CLOCKFREQ  ?=
 
 # For SystemVerilog generation
-ROMDATA     = $(SWDIR)/build/$(APPTARGET).bin
+ROMFILE     = $(SWDIR)/build/$(APPTARGET).bin
 NULL        =
 SPACE       = $(NULL) #
 COMMA       = ,
 FIRRTLOPTS  = --target-dir $(RTLDIR)
 FIRTOOLOPTS = --disable-all-randomization --strip-debug-info --lowering-options=disallowLocalVariables,disallowPackedArrays
 # --strip-verilog -o ./firrtl -O release
-RTLGENOPTS  = --rom-contents $(ROMDATA) --clock-frequency $(CLOCKFREQ) --firrtl-opts \"$(FIRRTLOPTS)\" --firtool-opts \"$(FIRTOOLOPTS)\"
+RTLGENOPTS  = --rom-file $(ROMFILE) --clock-frequency $(CLOCKFREQ) --firrtl-opts \"$(FIRRTLOPTS)\" --firtool-opts \"$(FIRTOOLOPTS)\"
 
 # Generic target names
 .PHONY: all
@@ -48,14 +48,14 @@ all: $(RTLFILE) test
 rtl: $(RTLFILE)
 
 .PHONY: app
-app: $(ROMDATA)
+app: $(ROMFILE)
 
 # Generate SystemVerilog
-$(RTLFILE): $(SRCS) $(ROMDATA)
+$(RTLFILE): $(SRCS) $(ROMFILE)
 	$(SBT) $(SBTFLAGS) "runMain $(MAINTARGET) $(RTLGENOPTS)"
 
 # Compile application
-$(ROMDATA):
+$(ROMFILE):
 	$(MAKE) -C $(SWDIR) $(APPTARGET)
 
 # Synthesize design
