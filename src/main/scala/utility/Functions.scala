@@ -43,9 +43,9 @@ object RisingEdge {
 }
 
 object BitsToByteVec {
-  def apply[T <: Bits](data: T): Vec[T] = {
+  def apply[T <: Bits](data: T): Vec[UInt] = {
     require(data.getWidth % BYTE_WIDTH == 0)
-    VecInit(data.asBools.grouped(BYTE_WIDTH).map(VecInit(_).asTypeOf(data)).toSeq)
+    VecInit(data.asBools.grouped(BYTE_WIDTH).map(VecInit(_).asUInt).toSeq)
   }
 }
 
