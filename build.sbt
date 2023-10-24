@@ -1,14 +1,13 @@
-ThisBuild / scalaVersion     := "2.13.8"
-ThisBuild / version          := "0.1.0"
+ThisBuild / scalaVersion     := "2.13.10"
 
-val chiselVersion = "5.0.0"
+val chiselVersion = "3.6.0"
 
 lazy val root = (project in file("."))
   .settings(
     name := "Musvit",
     libraryDependencies ++= Seq(
-      "org.chipsalliance" %% "chisel" % chiselVersion,
-      "edu.berkeley.cs" %% "chiseltest" % "5.0.0" % "test",
+      "edu.berkeley.cs" %% "chisel3" % chiselVersion,
+      "edu.berkeley.cs" %% "chiseltest" % "0.6.0" % "test",
       "com.github.scopt" %% "scopt" % "4.1.0",
     ),
     scalacOptions ++= Seq(
@@ -16,8 +15,6 @@ lazy val root = (project in file("."))
       "-deprecation",
       "-feature",
       "-Xcheckinit",
-      "-Ymacro-annotations",
     ),
-    addCompilerPlugin("org.chipsalliance" % "chisel-plugin" % chiselVersion cross CrossVersion.full),
+    addCompilerPlugin("edu.berkeley.cs" % "chisel3-plugin" % chiselVersion cross CrossVersion.full),
   )
-
