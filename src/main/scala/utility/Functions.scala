@@ -49,6 +49,12 @@ object BitsToByteVec {
   }
 }
 
+object SignExtend {
+  def apply[T <: Bits](data: T, signBit: Int, extendWidth: Int) = {
+    Fill(extendWidth - signBit + 1, data(signBit)) ## data(signBit, 0)
+  }
+}
+
 object BarrelShifter {
   private trait ShiftType
 
