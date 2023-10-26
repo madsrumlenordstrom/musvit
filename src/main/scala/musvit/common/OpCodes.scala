@@ -5,9 +5,12 @@ import chisel3.util._
 
 trait OpCodes {
   // Generic yes, no and don't care
-  val Y:      BitPat = BitPat("b1")
-  val N:      BitPat = BitPat("b0")
-  val X:      BitPat = BitPat("b?")
+  def Y:      BitPat = BitPat("b1")
+  def N:      BitPat = BitPat("b0")
+  def X:      BitPat = BitPat("b?")
+
+  // Width of opcodes
+  val OP_WIDTH: Int = 4
 
   // Memory opcodes
   object Mem {
@@ -20,9 +23,23 @@ trait OpCodes {
     def SH:  BitPat = BitPat("b1001")
     def SW:  BitPat = BitPat("b1010")
 
-    val X:   BitPat = BitPat("b????")
+    def X:   BitPat = BitPat("b????")
+
+    // Not opcodes used for identifying data width
+    def BYTE: BitPat = BitPat("b??00")
+    def HALF: BitPat = BitPat("b??01")
+    def WORD: BitPat = BitPat("b??10")
+
+    // Not opcodes used for indentifying sign
+    def SIGNED:   BitPat = BitPat("b?0??")
+    def UNSIGNED: BitPat = BitPat("b?1??")
+
+    // Not opcodes used for identifying read/write
+    def LOAD:  BitPat = BitPat("b0???")
+    def STORE: BitPat = BitPat("b1???")
   }
   
+  // ALU opcodes
   object ALU {
     def ADD:    BitPat = BitPat("b0000")
     def SUB:    BitPat = BitPat("b1000")
@@ -38,16 +55,17 @@ trait OpCodes {
     def X:      BitPat = BitPat("b????")
   }
 
+  // MDU opcodes
   object MDU {
     // Maybe set MSB to dont care here?
-    def MUL:    BitPat = BitPat("0000")
-    def MULH:   BitPat = BitPat("0001")
-    def MULHSU: BitPat = BitPat("0010")
-    def MULHU:  BitPat = BitPat("0011")
-    def DIV:    BitPat = BitPat("0100")
-    def DIVU:   BitPat = BitPat("0101")
-    def REM:    BitPat = BitPat("0110")
-    def REMU:   BitPat = BitPat("0111")
+    def MUL:    BitPat = BitPat("b0000")
+    def MULH:   BitPat = BitPat("b0001")
+    def MULHSU: BitPat = BitPat("b0010")
+    def MULHU:  BitPat = BitPat("b0011")
+    def DIV:    BitPat = BitPat("b0100")
+    def DIVU:   BitPat = BitPat("b0101")
+    def REM:    BitPat = BitPat("b0110")
+    def REMU:   BitPat = BitPat("b0111")
 
     def X:      BitPat = BitPat("b????")
   }
