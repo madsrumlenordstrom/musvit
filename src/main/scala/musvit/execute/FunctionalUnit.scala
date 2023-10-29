@@ -8,14 +8,14 @@ import musvit.MusvitConfig
 import utility.Constants._
 
 class FunctionalUnitData(config: MusvitConfig) extends Bundle with OpCodes {
-  val qi = ReservationStationID(config)
+  val qi = ReservationStationTag(config)
   val op = UInt(OP_WIDTH.W)
-  val op1 = UInt(WORD_WIDTH.W)
-  val op2 = UInt(WORD_WIDTH.W)
+  val opr1 = UInt(WORD_WIDTH.W)
+  val opr2 = UInt(WORD_WIDTH.W)
 }
 
 class CommonDataBusData(config: MusvitConfig) extends Bundle with OpCodes {
-  val qi = ReservationStationID(config)
+  val qi = ReservationStationTag(config)
   val vi = UInt(WORD_WIDTH.W)
 }
 
@@ -34,6 +34,6 @@ class FunctionalUnit(config: MusvitConfig) extends Module with OpCodes {
 
   val qi = dataReg.qi
   val op = dataReg.op
-  val op1 = dataReg.op1
-  val op2 = dataReg.op2
+  val opr1 = dataReg.opr1
+  val opr2 = dataReg.opr2
 }
