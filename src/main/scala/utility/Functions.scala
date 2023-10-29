@@ -22,7 +22,7 @@ object Functions {
       .withPadding(BigInt(0))
       .map(
         _.zipWithIndex
-          .map { case (lort, i) => (lort << (i * BYTE_WIDTH)) }
+          .map { case (data, i) => (data << (i * BYTE_WIDTH)) }
           .reduce(_ + _)
           .asUInt(width.W)
       )
