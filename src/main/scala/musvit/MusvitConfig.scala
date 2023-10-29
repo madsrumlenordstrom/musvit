@@ -9,6 +9,9 @@ case class MusvitConfig(
     clockFrequency: Int = -1,       // Clock frequency of Musvit
     ramSize: Int = 0x00001000,      // RAM size in bytes
     ramAddr: Long = 0x00001000L,    // Start address of RAM
+    instQueueSize: Int = 8,         // Number of queue entries in instruction queue
+    fuNum: Int = 4,                 // Total number of functional units
+    rsPerFu: Int = 4,               // Number of reservation stations per functional unit
 )
 
 // TODO use BigInt instead of Int and Long for memory related stuff
