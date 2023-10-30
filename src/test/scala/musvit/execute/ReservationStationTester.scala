@@ -12,10 +12,8 @@ import utility.Constants._
 import utility.TestingFunctions._
 
 class ReservationStationTester extends AnyFlatSpec with ChiselScalatestTester {
-  val config = MusvitConfig(fetchWidth = 2, rsPerFu = 4)
+  val config = MusvitConfig(fetchWidth = 2, rsNum = 8)
 
-  val testFile = "random"
-  val words = fileToUInts(testFile, WORD_WIDTH)
   val moduleTag = 5.U
   val iterations = 1000
 

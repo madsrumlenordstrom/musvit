@@ -9,7 +9,7 @@ import musvit.common.OpCodes
 
 object ReservationStationTag {
   def apply(config: MusvitConfig) = {
-    UInt(log2Up(config.fuNum * config.rsPerFu + 1).W)
+    UInt(log2Up(config.rsNum).W)
   }
 }
 
