@@ -22,10 +22,10 @@ class FunctionalUnit(config: MusvitConfig) extends Module with OpCodes {
   val io = IO(new FunctionalUnitIO(config))
 
   val ready = WireDefault(false.B)
-  val dataReg = RegEnable(io.rs.bits, 0.U.asTypeOf(new FunctionalUnitOperands(config)), ready)
-  val valid = RegEnable(io.rs.valid, false.B, ready)
 
-  val op = dataReg.op
-  val opr1 = dataReg.data1
-  val opr2 = dataReg.data2
+  val valid = io.rs.valid
+  val op = io.rs.bits.op
+  val data1 = io.rs.bits.data1
+  val data2 = io.rs.bits.data2
+  io.rs.ready := ready
 }

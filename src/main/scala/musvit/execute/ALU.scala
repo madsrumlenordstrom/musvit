@@ -7,23 +7,23 @@ import musvit.execute.FunctionalUnit
 import musvit.MusvitConfig
 
 class ALU (config: MusvitConfig) extends FunctionalUnit(config) {
-  val shamt = opr2(4, 0)
+  val shamt = data2(4, 0)
   
-  val lt = opr1.asSInt < opr2.asSInt
-  val ltu = opr1 < opr2
-  val eq = opr1 === opr2
+  val lt = data1.asSInt < data2.asSInt
+  val ltu = data1 < data2
+  val eq = data1 === data2
 
   io.cdb.bits := MuxCase(DontCare, Seq(
-    (op === ALU.ADD)  -> ((opr1.asSInt + opr2.asSInt).asUInt),
-    (op === ALU.SUB)  -> ((opr1.asSInt - opr2.asSInt).asUInt),
-    (op === ALU.AND)  -> (opr1 & opr2),
-    (op === ALU.OR)   -> (opr1 | opr2),
-    (op === ALU.XOR)  -> (opr1 ^ opr2),
+    (op === ALU.ADD)  -> ((data1.asSInt + data2.asSInt).asUInt),
+    (op === ALU.SUB)  -> ((data1.asSInt - data2.asSInt).asUInt),
+    (op === ALU.AND)  -> (data1 & data2),
+    (op === ALU.OR)   -> (data1 | data2),
+    (op === ALU.XOR)  -> (data1 ^ data2),
     (op === ALU.SLT)  -> (lt),
-    (op === ALU.SLL)  -> (opr1 << shamt),
+    (op === ALU.SLL)  -> (data1 << shamt),
     (op === ALU.SLTU) -> (ltu),
-    (op === ALU.SRL)  -> (opr1 >> shamt),
-    (op === ALU.SRA)  -> ((opr1.asSInt >> shamt).asUInt),
+    (op === ALU.SRL)  -> (data1 >> shamt),
+    (op === ALU.SRA)  -> ((data1.asSInt >> shamt).asUInt),
   ))
 
   io.cdb.valid := valid
