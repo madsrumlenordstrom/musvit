@@ -15,15 +15,15 @@ case class MusvitConfig(
     ramSize: Int = 0x00001000,      // RAM size in bytes
     ramAddr: Long = 0x00001000L,    // Start address of RAM
     instQueueSize: Int = 8,         // Number of queue entries in instruction queue
-    rsNum: Int = 4,                 // Number of reservation stations
+    rsNum: Int = 8,                 // Number of reservation stations
 )
 
 // TODO use BigInt instead of Int and Long for memory related stuff
 
-object MusvitConfigs {
-    val basys3 = MusvitConfig(
+object MusvitConfig {
+    val default = MusvitConfig(
         fetchWidth = 2,
         romFile = "sw/build/blinky.bin",
-        clockFrequency = 100000000,
+        rsNum = 8,
     )
 }
