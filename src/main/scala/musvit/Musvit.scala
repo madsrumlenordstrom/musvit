@@ -1,7 +1,6 @@
 package musvit
 
 import chisel3._
-import chisel3.util.Cat
 import circt.stage.ChiselStage
 
 import memory.MusvitROM
@@ -17,12 +16,10 @@ class MusvitIO(config: MusvitConfig) extends Bundle {
 class Musvit(config: MusvitConfig) extends Module {
   val io = IO(new MusvitIO(config))
 
-  val bytes = fileToUInts(config.romFile, config.fetchWidth * INST_WIDTH)
-
-  val instMem = MusvitROM(config)
+  val rom = MusvitROM(config)
   val musvitCore = MusvitCore(config)
 
-  instMem.io <> musvitCore.io.instMem
+  rom.io <> musvitCore.io.instMem
   
   io.temp := musvitCore.io.temp
 }
