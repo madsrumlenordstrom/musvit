@@ -2,78 +2,98 @@ package musvit.execute
 
 import chisel3._
 import chiseltest._
+import chisel3.experimental.BundleLiterals._
 import org.scalatest.flatspec.AnyFlatSpec
+import scala.util.Random
 
 import musvit.MusvitConfig
 import utility.Functions._
 import utility.Constants._
-import os.group
-import os.truncate
+import utility.TestingFunctions._
 
 class ReservationStationTester extends AnyFlatSpec with ChiselScalatestTester {
-  val config = MusvitConfig(fetchWidth = 2, rsNum = 16)
-  val uniqID = 7.U
+  val config = MusvitConfig(fetchWidth = 2, rsPerFu = 4)
 
   val testFile = "random"
   val words = fileToUInts(testFile, WORD_WIDTH)
+  val moduleTag = 5.U
+  val iterations = 1000
 
   "ReservationStation" should "pass" in {
-    test(new ReservationStation(config, uniqID)).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
+    test(new ReservationStation(config, moduleTag)).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
       dut.clock.setTimeout(0)
 
-      def issue(qj: UInt, qk: UInt, vj: UInt, vk: UInt): Unit = {
-        if (dut.io.fields.ready.peekBoolean()) {
-          dut.io.fields.valid.poke(true.B)
-          dut.io.fields.bits.busy.poke(true.B)
-          dut.io.fields.bits.qj.poke(qj)
-          dut.io.fields.bits.qk.poke(qk)
-          dut.io.fields.bits.vj.poke(vj)
-          dut.io.fields.bits.vk.poke(vk)
-          dut.io.fields.bits.op.poke(2.U) // Random val
-          dut.clock.step(1)
+      def rsData(op: UInt, tag1: UInt, tag2: UInt, data1: UInt, data2: UInt): IssueBusFields = {
+        chiselTypeOf(dut.io.ib.head.data).Lit(_.op -> op,
+        _.fields(0).tag -> tag1,
+        _.fields(0).data -> data1,
+        _.fields(1).tag -> tag2,
+        _.fields(1).data -> data2
+        )
+      }
+
+      def getRandomRsData(): IssueBusFields = {
+        rsData(getRandomData(dut.io.ib(0).data.op.getWidth),
+        getRandomData(dut.io.ib(0).tag.getWidth),
+        getRandomData(dut.io.ib(0).tag.getWidth),
+        getRandomWord(),
+        getRandomWord())
+      }
+
+      def fuData(op: UInt, data1: UInt, data2: UInt): FunctionalUnitOperands = {
+        chiselTypeOf(dut.io.fu.bits).Lit(
+          _.op -> op,
+          _.data1 -> data1,
+          _.data2 -> data2,
+          )
+      }
+
+      def issue(tag: UInt, issueData: IssueBusFields): Unit = {
+        dut.io.ib(0).tag.poke(tag)
+        dut.io.ib(0).data.poke(issueData)
+        dut.clock.step(1)
+      }
+
+      def read(expected: FunctionalUnitOperands): Unit = {
+        dut.io.fu.ready.poke(true.B)
+        dut.io.fu.valid.expect(true.B)
+        dut.io.fu.bits.expect(expected)
+      }
+
+      def writeCDB(tag: UInt, data: UInt): Unit = {
+        dut.io.cdb(0).valid.poke(true.B)
+        dut.io.cdb(0).bits.tag.poke(tag)
+        dut.io.cdb(0).bits.data.poke(data)
+        dut.clock.step(1)
+      }
+
+      for (i <- 0 until iterations) {
+        val data = getRandomRsData()
+        var expected1 = data.fields(0).data
+        var expected2 = data.fields(1).data
+        issue(moduleTag, data)
+
+        var j = 0
+        while (!dut.io.fu.valid.peekBoolean()) {
+          if (j == moduleTag.litValue) {
+            j += 1
+          }
+          val newData = getRandomWord()
+          writeCDB(j.U, newData)
+          if (j == data.fields(0).tag.litValue && data.fields(0).data.litValue != moduleTag.litValue) {
+            expected1 = newData
+          }
+          if (j == data.fields(1).tag.litValue && data.fields(1).data.litValue != moduleTag.litValue) {
+            expected2 = newData
+          }
+          j += 1
         }
+        // Check output
+        read(fuData(data.op, expected1, expected2))
+
+        // Reset reservation station
+        writeCDB(moduleTag, 0x00.U)
       }
-
-      def consumeOperands(expectOp1: UInt, expectOp2: UInt): Unit = {
-        if (dut.io.operands.valid.peekBoolean()) {
-          dut.io.operands.ready.poke(true.B)
-          dut.io.operands.bits.op1.expect(expectOp1)
-          dut.io.operands.bits.op2.expect(expectOp2)
-        }
-      }
-
-      def setCDB(qi: Int, vi: UInt, valid: Bool): Unit = {
-        dut.io.monitor(qi).valid.poke(valid)
-        dut.io.monitor(qi).bits.vi.poke(vi)
-      }
-
-      def initCDB(vi: UInt, valid: Bool): Unit = {
-        for (i <- 0 until dut.io.monitor.length) {
-          setCDB(i, vi, valid)
-        }
-      }
-
-      initCDB(0.U, false.B)
-
-      // Check consume
-      for (i <- 0 until words.length by 2) {
-        issue(0.U, 0.U, words(i), words(i + 1))
-        consumeOperands(words(i), words(i + 1))
-      }
-
-      issue(1.U, 2.U, 0.U, 0.U)
-      dut.io.operands.valid.expect(false.B)
-      dut.clock.step(5)
-      setCDB(2, 0x0F0F0F0F.U, true.B)
-      dut.clock.step(1)
-      dut.io.operands.valid.expect(false.B)
-      dut.io.operands.bits.op2.expect(0x0F0F0F0F.U)
-      dut.clock.step(5)
-      setCDB(1, 0x771100AA.U, true.B)
-      dut.clock.step(1)
-      dut.io.operands.valid.expect(true.B)
-      dut.io.operands.bits.op1.expect(0x771100AA.U)
-      consumeOperands(0x771100AA.U, 0x0F0F0F0F.U)
     }
   }
 }

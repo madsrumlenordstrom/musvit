@@ -13,18 +13,18 @@ object ReservationStationTag {
   }
 }
 
-class TaggedData[T <: Data](gen: T, config: MusvitConfig) extends Bundle {
+class Tagged[T <: Data](gen: T, config: MusvitConfig) extends Bundle {
   val tag = ReservationStationTag(config)
   val data = gen
 }
 
-object TaggedData {
-  def apply[T <: Data](gen: T, config: MusvitConfig): TaggedData[T] = new TaggedData(gen, config)
+object Tagged {
+  def apply[T <: Data](gen: T, config: MusvitConfig): Tagged[T] = new Tagged(gen, config)
 }
 
 object CommonDataBus {
   def apply(config: MusvitConfig) = {
-    TaggedData(UInt(WORD_WIDTH.W), config)
+    Tagged(UInt(WORD_WIDTH.W), config)
   }
 }
 
@@ -35,7 +35,7 @@ class IssueBusFields(config: MusvitConfig) extends Bundle with OpCodes {
 
 object IssueBus {
   def apply(config: MusvitConfig) = {
-    TaggedData(new IssueBusFields(config), config)
+    Tagged(new IssueBusFields(config), config)
   }
 }
 

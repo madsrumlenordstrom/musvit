@@ -6,71 +6,47 @@ import chisel3.util._
 import musvit.MusvitConfig
 import musvit.common.OpCodes
 import utility.Constants._
-import dataclass.data
-
-class ReservationStationFields(config: MusvitConfig) extends Bundle with OpCodes {
-  val op = UInt(OP_WIDTH.W)
-  val qj = UInt(log2Up(config.rsNum).W)
-  val qk = UInt(log2Up(config.rsNum).W)
-  val vj = UInt(WORD_WIDTH.W)
-  val vk = UInt(WORD_WIDTH.W)
-  //val imm = UInt(WORD_WIDTH.W)
-  val busy = Bool()
-}
-
-// Maybe overkill with a bundle??
-class CDBMonitorIO(config: MusvitConfig) extends Bundle {
-  val vi = UInt(WORD_WIDTH.W)
-}
-
-class ReservationStationOperands(config: MusvitConfig) extends Bundle with OpCodes {
-  val op = UInt(OP_WIDTH.W)
-  val op1 = UInt(WORD_WIDTH.W)
-  val op2 = UInt(WORD_WIDTH.W)
-}
 
 class ReservationStationIO(config: MusvitConfig) extends Bundle with OpCodes {
-  val fields = Flipped(Decoupled(new ReservationStationFields(config)))
-  val monitor = Vec(config.rsNum, Flipped(Decoupled(new CDBMonitorIO(config))))
-  val operands = Decoupled(new ReservationStationOperands(config))
+  val ib = Vec(config.fetchWidth, Input(IssueBus(config)))                          // Issue bus
+  val cdb = Flipped(Vec(config.fetchWidth, Decoupled(CommonDataBus(config))))       // Commmon data bus
+  val fu = Decoupled(new FunctionalUnitOperands(config))                                    // Functional unit
 }
 
-class ReservationStation(config: MusvitConfig, uniqID: UInt) extends Module {
+class ReservationStation(config: MusvitConfig, val tag: UInt) extends Module {
   val io = IO(new ReservationStationIO(config))
 
-  val dataReg = RegInit(0.U.asTypeOf(new ReservationStationFields(config)))
-  val op1Valid = dataReg.qj === 0.U
-  val op2Valid = dataReg.qk === 0.U
-  ///val uniqID = uniqID
+  val busyReg = RegInit(false.B)
+  val rsReg = RegInit(0.U.asTypeOf(new IssueBusFields(config)))
+  val dataValid = rsReg.fields.map(_.tag === tag)
 
-  // Get data
-  when (io.fields.valid && !dataReg.busy) {
-    dataReg := io.fields.bits
+  // Get data from issue bus
+  io.ib.zipWithIndex.foreach{ case (ib, i) => 
+    when(io.ib(i).tag === tag && !busyReg) {
+      rsReg := io.ib(i).data
+      busyReg := true.B
+    }
   }
 
-  io.fields.ready := !dataReg.busy
-  io.monitor.map(_.ready.:=(!op1Valid && !op2Valid)) // Not really used
+  // Look for valid data on common data bus
+  io.cdb.zipWithIndex.foreach { case (cdb, i) =>
+    cdb.ready := false.B
+    rsReg.fields.zipWithIndex.foreach{ case (fields, j) =>
+      when(!dataValid(j) && cdb.bits.tag === fields.tag && cdb.valid) {
+        rsReg.fields(j).data := cdb.bits.data
+        rsReg.fields(j).tag := tag
+        cdb.ready := true.B // not really used
+      }  
+    }
 
-  // Monitor bus for operands
-  when (io.monitor(dataReg.qj).valid && !op1Valid) {
-    dataReg.vj := io.monitor(dataReg.qj).bits.vi
-    dataReg.qj := 0.U
-  }
-  when (io.monitor(dataReg.qk).valid && !op2Valid) {
-    dataReg.vk := io.monitor(dataReg.qk).bits.vi
-    dataReg.qk := 0.U
-  }
-
-  val validData = dataReg.busy && op1Valid && op2Valid
-
-  // Flag operands as consumed
-  when (validData && io.operands.ready) {
-    io.fields.ready := true.B
-    dataReg.busy := false.B
+    // Check if result has been written
+    when (busyReg && cdb.valid && cdb.bits.tag === tag) {
+      busyReg := false.B
+    }
   }
 
-  io.operands.valid := validData
-  io.operands.bits.op := dataReg.op
-  io.operands.bits.op1 := dataReg.vj
-  io.operands.bits.op2 := dataReg.vk
+  io.fu.valid := VecInit(dataValid).asUInt.andR
+  io.fu.bits.op := rsReg.op
+  io.fu.bits.data1 := rsReg.fields(0).data
+  io.fu.bits.data2 := rsReg.fields(1).data
 }
