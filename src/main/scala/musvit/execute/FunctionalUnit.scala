@@ -15,7 +15,7 @@ class FunctionalUnitOperands(config: MusvitConfig) extends Bundle with OpCodes {
 
 class FunctionalUnitIO(config: MusvitConfig) extends Bundle {
   val rs = Flipped(Decoupled(new FunctionalUnitOperands(config)))
-  val cdb = Decoupled(CommonDataBus(config))
+  val result = Decoupled(UInt(WORD_WIDTH.W))
 }
 
 class FunctionalUnit(config: MusvitConfig) extends Module with OpCodes {

@@ -13,7 +13,7 @@ class ALU (config: MusvitConfig) extends FunctionalUnit(config) {
   val ltu = data1 < data2
   val eq = data1 === data2
 
-  io.cdb.bits := MuxCase(DontCare, Seq(
+  io.result.bits := MuxCase(DontCare, Seq(
     (op === ALU.ADD)  -> ((data1.asSInt + data2.asSInt).asUInt),
     (op === ALU.SUB)  -> ((data1.asSInt - data2.asSInt).asUInt),
     (op === ALU.AND)  -> (data1 & data2),
@@ -26,6 +26,6 @@ class ALU (config: MusvitConfig) extends FunctionalUnit(config) {
     (op === ALU.SRA)  -> ((data1.asSInt >> shamt).asUInt),
   ))
 
-  io.cdb.valid := valid
-  ready := io.cdb.ready
+  io.result.valid := valid
+  ready := io.result.ready
 }
