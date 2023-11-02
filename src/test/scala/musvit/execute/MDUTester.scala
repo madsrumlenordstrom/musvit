@@ -15,7 +15,6 @@ import musvit.common.OpCodes
 class MultiplierTester extends AnyFlatSpec with ChiselScalatestTester with OpCodes {
   val config = MusvitConfig.default
 
-  val moduleTag = 5.U
   val iterations = 1000
   var steps = 0
 
@@ -80,12 +79,20 @@ class MultiplierTester extends AnyFlatSpec with ChiselScalatestTester with OpCod
           read(product.U)
         }
 
+        println("Testing with random input")
         for (i <- 0 until iterations) {
           mul(getRandomWord(), getRandomWord())
           mulh(getRandomWord(), getRandomWord())
           mulhsu(getRandomWord(), getRandomWord())
           mulhu(getRandomWord(), getRandomWord())
         }
+        
+        // Edge cases
+        println("Testing edge cases")
+        mul(0x00000000ffffffffL.U, 0x00000000ffffffffL.U)
+        mulh(0x00000000ffffffffL.U, 0x00000000ffffffffL.U)
+        mulhsu(0x00000000ffffffffL.U, 0x00000000ffffffffL.U)
+        mulhu(0x00000000ffffffffL.U, 0x00000000ffffffffL.U)
 
         println("Total steps was " + steps)
       }
