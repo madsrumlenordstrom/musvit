@@ -25,7 +25,7 @@ class ROMTester extends AnyFlatSpec with ChiselScalatestTester {
         dut.io.addr.poke(i.U)
         dut.clock.step(1)
         dut.io.data.expect(contents(i))
-        println(formatStr.format(i, dut.io.data.peekInt()))
+        //println(formatStr.format(i, dut.io.data.peekInt()))
       }
     }
   }
@@ -45,12 +45,12 @@ class MusvitROMTester extends AnyFlatSpec with ChiselScalatestTester {
         val addr = (i * BYTES_PER_INST).asUInt(ADDR_WIDTH.W)
         dut.io.addr.poke(addr)
         
-        print("0x%s ".format(uintToHexString(addr)))
+        //print("0x%s ".format(uintToHexString(addr)))
         for (j <- 0 until config.fetchWidth) {
           dut.io.data(j).expect(dut.contents(i + j))
-          print("%s ".format(uintToHexString(dut.io.data(j).peek())))
+          //print("%s ".format(uintToHexString(dut.io.data(j).peek())))
         }
-        println()
+        //println()
         
         dut.clock.step(1)
       }
