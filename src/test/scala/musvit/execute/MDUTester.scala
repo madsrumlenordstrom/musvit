@@ -143,7 +143,7 @@ class DividerTester extends AnyFlatSpec with ChiselScalatestTester with OpCodes 
           val data = fuData(MDU.DIV.value.U, data1, data2)
           issue(data)
           val product = data.data1.litValue.toInt / data.data2.litValue.toInt
-          read(product.U)
+          read(("b" + product.toBinaryString).U)
         }
 
         def divu(data1: UInt, data2: UInt): Unit = {
@@ -156,8 +156,8 @@ class DividerTester extends AnyFlatSpec with ChiselScalatestTester with OpCodes 
         def rem(data1: UInt, data2: UInt): Unit = {
           val data = fuData(MDU.REM.value.U, data1, data2)
           issue(data)
-          val product = data.data1.asSInt.litValue % data.data2.asSInt.litValue
-          read(product.S.asUInt)
+          val product = data.data1.litValue.toInt % data.data2.litValue.toInt
+          read(("b" + product.toBinaryString).U)
         }
 
         def remu(data1: UInt, data2: UInt): Unit = {
@@ -167,20 +167,32 @@ class DividerTester extends AnyFlatSpec with ChiselScalatestTester with OpCodes 
           read(product.U)
         }
 
-        println("Testing with random input")
-        for (i <- 0 until iterations) {
-          //div(getRandomWord(), getRandomWord())
-          divu(getRandomWord(), getRandomWord())
-          //rem(getRandomWord(), getRandomWord())
-          remu(getRandomWord(), getRandomWord())
+        def randomTest(): Unit = {
+          println("Testing with random input")
+          for (i <- 0 until iterations) {
+            div(getRandomWord(), getRandomWord())
+            divu(getRandomWord(), getRandomWord())
+            rem(getRandomWord(), getRandomWord())
+            remu(getRandomWord(), getRandomWord())
+          }
         }
 
-        // Edge cases
-        println("Testing edge cases")
-        //div(0x00000000ffffffffL.U, 0x00000000ffffffffL.U)
-        //divu(0x00000000ffffffffL.U, 0x00000000ffffffffL.U)
-        //rem(0x00000000ffffffffL.U, 0x00000000ffffffffL.U)
-        //remu(0x00000000ffffffffL.U, 0x00000000ffffffffL.U)
+        def edgeCases(): Unit = {
+          println("Testing edge cases")
+          val edgeVals = Seq(1L.U, 0x00000000ffffffffL.U)
+          for (i <- 0 until 2) {
+            for (j <- 0 until 2) {
+              div(edgeVals(i), edgeVals(j))
+              divu(edgeVals(i), edgeVals(j))
+              rem(edgeVals(i), edgeVals(j))
+              remu(edgeVals(i), edgeVals(j))
+            }
+          }
+        }
+
+        randomTest()
+
+        edgeCases()
 
         println("Total steps was " + steps)
       }
