@@ -16,4 +16,8 @@ object TestingFunctions {
   def getRandomWord(): UInt = {
     getRandomData(WORD_WIDTH)
   }
+
+  def intToUInt(data: Int): UInt = {
+    ("b" + data.toBinaryString).U
+  }
 }
