@@ -51,48 +51,59 @@ class MultiplierTester extends AnyFlatSpec with ChiselScalatestTester with OpCod
           dut.io.result.bits.expect(expected)
         }
 
-        def mul(data1: UInt, data2: UInt): Unit = {
-          val data = fuData(MDU.MUL.value.U, data1, data2)
+        def mul(data1: Int, data2: Int): Unit = {
+          val data = fuData(MDU.MUL.value.U, intToUInt(data1), intToUInt(data2))
           issue(data)
-          val product = data.data1.litValue * data.data2.litValue & 0x00000000ffffffffL
-          read(product.U)
+          val product = (data1.toLong * data2.toLong & 0x00000000ffffffffL).toInt
+          read(intToUInt(product))
         }
 
-        def mulh(data1: UInt, data2: UInt): Unit = {
-          val data = fuData(MDU.MULH.value.U, data1, data2)
+        def mulh(data1: Int, data2: Int): Unit = {
+          val data = fuData(MDU.MULH.value.U, intToUInt(data1), intToUInt(data2))
           issue(data)
-          val product = data.data1.litValue * data.data2.litValue >> 32
-          read(product.U)
+          val product = (data1.toLong * data2.toLong >> 32).toInt
+          read(intToUInt(product))
         }
 
-        def mulhsu(data1: UInt, data2: UInt): Unit = {
-          val data = fuData(MDU.MULHSU.value.U, data1, data2)
+        def mulhsu(data1: Int, data2: Int): Unit = {
+          val data = fuData(MDU.MULHSU.value.U, intToUInt(data1), intToUInt(data2))
           issue(data)
-          val product = data.data1.litValue * data.data2.litValue.abs >> 32
-          read(product.U)
+          val product = (data1.toLong * (data2.toLong & 0xffffffffL) >> 32).toInt
+          read(intToUInt(product))
         }
 
-        def mulhu(data1: UInt, data2: UInt): Unit = {
-          val data = fuData(MDU.MULHU.value.U, data1, data2)
+        def mulhu(data1: Int, data2: Int): Unit = {
+          val data = fuData(MDU.MULHU.value.U, intToUInt(data1), intToUInt(data2))
           issue(data)
-          val product = data.data1.litValue.abs * data.data2.litValue.abs >> 32
-          read(product.U)
+          val product = ((data1.toLong & 0xffffffffL) * (data2.toLong & 0xffffffffL) >> 32).toInt
+          read(intToUInt(product))
         }
 
-        println("Testing with random input")
-        for (i <- 0 until iterations) {
-          mul(getRandomWord(), getRandomWord())
-          mulh(getRandomWord(), getRandomWord())
-          mulhsu(getRandomWord(), getRandomWord())
-          mulhu(getRandomWord(), getRandomWord())
+        def randomTest(): Unit = {
+          println("Testing with random input")
+          for (i <- 0 until iterations) {
+            mul(Random.nextInt(), Random.nextInt())
+            mulh(Random.nextInt(), Random.nextInt())
+            mulhsu(Random.nextInt(), Random.nextInt())
+            mulhu(Random.nextInt(), Random.nextInt())
+          }
         }
-        
-        // Edge cases
-        println("Testing edge cases")
-        mul(0x00000000ffffffffL.U, 0x00000000ffffffffL.U)
-        mulh(0x00000000ffffffffL.U, 0x00000000ffffffffL.U)
-        mulhsu(0x00000000ffffffffL.U, 0x00000000ffffffffL.U)
-        mulhu(0x00000000ffffffffL.U, 0x00000000ffffffffL.U)
+
+        def edgeCases(): Unit = {
+          println("Testing edge cases")
+          val edgeVals = Seq(1, -1)
+          for (i <- 0 until 2) {
+            for (j <- 0 until 2) {
+              mul(edgeVals(i), edgeVals(j))
+              mulh(edgeVals(i), edgeVals(j))
+              mulhsu(edgeVals(i), edgeVals(j))
+              mulhu(edgeVals(i), edgeVals(j))
+            }
+          }
+        }
+
+        randomTest()
+        edgeCases()
 
         println("Total steps was " + steps)
       }
@@ -139,47 +150,47 @@ class DividerTester extends AnyFlatSpec with ChiselScalatestTester with OpCodes 
           dut.clock.step(1)
         }
 
-        def div(data1: UInt, data2: UInt): Unit = {
-          val data = fuData(MDU.DIV.value.U, data1, data2)
+        def div(data1: Int, data2: Int): Unit = {
+          val data = fuData(MDU.DIV.value.U, intToUInt(data1), intToUInt(data2))
           issue(data)
-          val product = data.data1.litValue.toInt / data.data2.litValue.toInt
-          read(("b" + product.toBinaryString).U)
+          val product = data1 / data2
+          read(intToUInt(product))
         }
 
-        def divu(data1: UInt, data2: UInt): Unit = {
-          val data = fuData(MDU.DIVU.value.U, data1, data2)
+        def divu(data1: Int, data2: Int): Unit = {
+          val data = fuData(MDU.DIVU.value.U, intToUInt(data1), intToUInt(data2))
           issue(data)
-          val product = data.data1.litValue / data.data2.litValue
-          read(product.U)
+          val product = ((data1.toLong & 0xffffffffL) / (data2.toLong & 0xffffffffL)).toInt
+          read(intToUInt(product))
         }
 
-        def rem(data1: UInt, data2: UInt): Unit = {
-          val data = fuData(MDU.REM.value.U, data1, data2)
+        def rem(data1: Int, data2: Int): Unit = {
+          val data = fuData(MDU.REM.value.U, intToUInt(data1), intToUInt(data2))
           issue(data)
-          val product = data.data1.litValue.toInt % data.data2.litValue.toInt
-          read(("b" + product.toBinaryString).U)
+          val product = data1 % data2
+          read(intToUInt(product))
         }
 
-        def remu(data1: UInt, data2: UInt): Unit = {
-          val data = fuData(MDU.REMU.value.U, data1, data2)
+        def remu(data1: Int, data2: Int): Unit = {
+          val data = fuData(MDU.REMU.value.U, intToUInt(data1), intToUInt(data2))
           issue(data)
-          val product = data.data1.litValue % data.data2.litValue
-          read(product.U)
+          val product = ((data1.toLong & 0xffffffffL) % (data2.toLong & 0xffffffffL)).toInt
+          read(intToUInt(product))
         }
 
         def randomTest(): Unit = {
           println("Testing with random input")
           for (i <- 0 until iterations) {
-            div(getRandomWord(), getRandomWord())
-            divu(getRandomWord(), getRandomWord())
-            rem(getRandomWord(), getRandomWord())
-            remu(getRandomWord(), getRandomWord())
+            div(Random.nextInt(), Random.nextInt())
+            divu(Random.nextInt(), Random.nextInt())
+            rem(Random.nextInt(), Random.nextInt())
+            remu(Random.nextInt(), Random.nextInt())
           }
         }
 
         def edgeCases(): Unit = {
           println("Testing edge cases")
-          val edgeVals = Seq(1L.U, 0x00000000ffffffffL.U)
+          val edgeVals = Seq(1, -1)
           for (i <- 0 until 2) {
             for (j <- 0 until 2) {
               div(edgeVals(i), edgeVals(j))
