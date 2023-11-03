@@ -60,6 +60,7 @@ class Divider(config: MusvitConfig) extends FunctionalUnit(config) {
   val validReg = RegInit(false.B)
   val signReg = RegInit(false.B)
   val (counterValue, counterWrap) = Counter(WORD_WIDTH - 1 to 0 by -1, countEn, reset.asBool)
+  val counterIsInit = counterValue === (WORD_WIDTH - 1).U
   val bitOH = UIntToOH(counterValue, WORD_WIDTH)
 
   when (RisingEdge(valid)) {
@@ -71,15 +72,15 @@ class Divider(config: MusvitConfig) extends FunctionalUnit(config) {
       (op === MDU.REMU) -> (false.B),
     ))
   }.otherwise {
-    countEn := counterValue =/= (WORD_WIDTH - 1).U
+    countEn := !counterIsInit
     ready := false.B
   }
 
-  val a = Mux(counterValue === (WORD_WIDTH - 1).U, data1, r)
+  val a = Mux(counterIsInit, data1, r)
   val b = (data2 << counterValue).asTypeOf(UInt((2 * WORD_WIDTH).W))
   val ge = a >= b
   r := Mux(ge, a - b, a)
-  q := Mux(counterValue === (WORD_WIDTH - 1).U, (ge ## Fill(WORD_WIDTH - 1, "b0".U)), (Fill(WORD_WIDTH, ge.asUInt) & bitOH) | q)
+  q := Mux(counterIsInit, (ge ## Fill(WORD_WIDTH - 1, "b0".U)), (Fill(WORD_WIDTH, ge.asUInt) & bitOH) | q)
   q := (q << 1) | ge.asUInt
   
   val unsignedResult = Mux(op === MDU.REM || op === MDU.REMU, r, q)
@@ -91,6 +92,57 @@ class Divider(config: MusvitConfig) extends FunctionalUnit(config) {
     validReg := true.B
   }
   
+  when (validReg && io.result.ready) {
+    validReg := false.B
+  }
+
+  io.result.valid := validReg
+}
+
+class Divider2(config: MusvitConfig) extends FunctionalUnit(config) {
+  //val resultReg = RegInit(0.U((2 * WORD_WIDTH + 1).W))
+  val remainderReg = RegInit(0.U((WORD_WIDTH + 1).W))
+  val quotientReg = RegInit(0.U(WORD_WIDTH.W))
+  val divisorReg = RegInit(0.U(WORD_WIDTH.W))
+  
+
+  val countEn = WireDefault(false.B)
+  val validReg = RegInit(false.B)
+  val signReg = RegInit(false.B)
+  val (counterValue, counterWrap) = Counter(0 until WORD_WIDTH + 1, countEn, reset.asBool)
+  val counterIsInit = counterValue === 0.U
+
+  when (RisingEdge(valid)) {
+    countEn := true.B
+    signReg := MuxCase(DontCare, Seq(
+      (op === MDU.DIV)  -> (data1.head(1) ^ data2.head(1)),
+      (op === MDU.DIVU) -> (false.B),
+      (op === MDU.REM)  -> (data1.head(1) ^ data2.head(1)),
+      (op === MDU.REMU) -> (false.B),
+    ))
+  }.otherwise {
+    countEn := !counterIsInit
+    ready := false.B
+  }
+
+  val divisor = Mux(counterIsInit, data2, divisorReg)
+  divisorReg := divisor >> 1
+  val remainder = Mux(counterIsInit, data1.head(1) ## data1, remainderReg)
+  val divRemSum = remainderReg -& divisorReg
+  val ltz = divRemSum.head(1).asBool
+  remainderReg := Mux(ltz, remainderReg, divRemSum)
+  quotientReg := (quotientReg << 1) | ltz.unary_!.asUInt
+
+
+  val unsignedResult = Mux(op === MDU.REM || op === MDU.REMU, remainderReg.tail(WORD_WIDTH), quotientReg)
+
+  io.result.bits := Mux(signReg, Negate(unsignedResult), unsignedResult)
+
+  // Valid data logic
+  when (counterWrap) {
+    validReg := true.B
+  }
+
   when (validReg && io.result.ready) {
     validReg := false.B
   }
