@@ -51,7 +51,13 @@ object BitsToByteVec {
 
 object SignExtend {
   def apply[T <: Bits](data: T, signBit: Int, extendWidth: Int) = {
-    Fill(extendWidth - signBit + 1, data(signBit)) ## data(signBit, 0)
+    (Fill(extendWidth - signBit + 1, data(signBit)) ## data(signBit, 0)).asTypeOf(data)
+  }
+}
+
+object Negate {
+  def apply[T <: Bits](data: T): T = {
+    (data.asUInt.unary_~ + 1.U).asTypeOf(data)
   }
 }
 
