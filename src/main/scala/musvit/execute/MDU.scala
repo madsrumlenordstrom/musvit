@@ -10,9 +10,6 @@ import utility.RisingEdge
 import utility.Negate
 import utility.SignExtend
 
-class MDU(config: MusvitConfig) extends FunctionalUnit(config) {
-}
-
 class Multiplier(config: MusvitConfig, cycles: Int = 4) extends FunctionalUnit(config) {
   val resultReg = RegInit(0.U((2 * WORD_WIDTH).W))
 
