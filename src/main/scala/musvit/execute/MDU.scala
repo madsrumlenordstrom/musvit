@@ -61,16 +61,10 @@ class Divider(config: MusvitConfig) extends FunctionalUnit(config) {
   val signReg = RegInit(false.B)
   val (counterValue, counterWrap) = Counter(WORD_WIDTH - 1 to 0 by -1, countEn, reset.asBool)
   val counterIsInit = counterValue === (WORD_WIDTH - 1).U
-  val bitOH = UIntToOH(counterValue, WORD_WIDTH)
 
   when (RisingEdge(valid)) {
     countEn := true.B
-    signReg := MuxCase(DontCare, Seq(
-      (op === MDU.DIV)  -> (data1.head(1) ^ data2.head(1)),
-      (op === MDU.DIVU) -> (false.B),
-      (op === MDU.REM)  -> (data1.head(1) ^ data2.head(1)),
-      (op === MDU.REMU) -> (false.B),
-    ))
+    signReg := Mux(op === MDU.DIV || op === MDU.REM, data1.head(1) ^ data2.head(1), false.B)
   }.otherwise {
     countEn := !counterIsInit
     ready := false.B
@@ -80,7 +74,6 @@ class Divider(config: MusvitConfig) extends FunctionalUnit(config) {
   val b = (data2 << counterValue).asTypeOf(UInt((2 * WORD_WIDTH).W))
   val ge = a >= b
   r := Mux(ge, a - b, a)
-  q := Mux(counterIsInit, (ge ## Fill(WORD_WIDTH - 1, "b0".U)), (Fill(WORD_WIDTH, ge.asUInt) & bitOH) | q)
   q := (q << 1) | ge.asUInt
   
   val unsignedResult = Mux(op === MDU.REM || op === MDU.REMU, r, q)
