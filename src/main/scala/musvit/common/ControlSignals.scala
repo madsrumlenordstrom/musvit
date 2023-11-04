@@ -3,7 +3,7 @@ package musvit.common
 import chisel3._
 import chisel3.util._
 
-trait OpCodes {
+trait ControlSignals {
   // Generic yes, no and don't care
   def Y:      BitPat = BitPat("b1")
   def N:      BitPat = BitPat("b0")
@@ -68,5 +68,15 @@ trait OpCodes {
     def REMU:   BitPat = BitPat("b0111")
 
     def X:      BitPat = BitPat("b????")
+  }
+
+  // Reorder buffer type entries
+  object ROB {
+    def REG:    BitPat = BitPat("b00")
+    def STORE:  BitPat = BitPat("b01")
+    def BRANCH: BitPat = BitPat("b10")
+    def NONE:   BitPat = BitPat("b11")
+
+    def X:      BitPat = BitPat("b??")
   }
 }

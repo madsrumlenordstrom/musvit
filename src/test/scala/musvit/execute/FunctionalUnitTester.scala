@@ -10,9 +10,9 @@ import musvit.MusvitConfig
 import utility.Functions._
 import utility.Constants._
 import utility.TestingFunctions._
-import musvit.common.OpCodes
+import musvit.common.ControlSignals
 
-class FunctionalUnitTester extends AnyFlatSpec with ChiselScalatestTester with OpCodes {
+class FunctionalUnitTester extends AnyFlatSpec with ChiselScalatestTester with ControlSignals {
   val config = MusvitConfig.default
   val defaultTag = 5
   val dummyTag = 0

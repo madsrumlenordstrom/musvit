@@ -5,7 +5,7 @@ import chisel3.util._
 
 import musvit.MusvitConfig
 import utility.Constants._
-import musvit.common.OpCodes
+import musvit.common.ControlSignals
 
 object ReservationStationTag {
   def apply(config: MusvitConfig) = {
@@ -28,10 +28,11 @@ object CommonDataBus {
   }
 }
 
-class IssueBusFields(config: MusvitConfig) extends Bundle with OpCodes {
+class IssueBusFields(config: MusvitConfig) extends Bundle with ControlSignals {
   val op = UInt(OP_WIDTH.W)
   val fields = Vec(2, CommonDataBus(config))
   val imm = UInt(WORD_WIDTH.W)
+  //val dest = UInt(log2Up(config.rsNum).W) // Make ROB entry num
 }
 
 object IssueBus {

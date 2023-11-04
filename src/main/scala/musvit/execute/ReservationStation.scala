@@ -4,10 +4,10 @@ import chisel3._
 import chisel3.util._
 
 import musvit.MusvitConfig
-import musvit.common.OpCodes
+import musvit.common.ControlSignals
 import utility.Constants._
 
-class ReservationStationIO(config: MusvitConfig) extends Bundle with OpCodes {
+class ReservationStationIO(config: MusvitConfig) extends Bundle with ControlSignals {
   val ib = Vec(config.fetchWidth, Input(IssueBus(config)))                          // Issue bus
   val cdb = Flipped(Vec(config.fetchWidth, Decoupled(CommonDataBus(config))))       // Commmon data bus
 }

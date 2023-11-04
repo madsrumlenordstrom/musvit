@@ -10,7 +10,7 @@ import musvit.MusvitConfig
 import utility.Functions._
 import utility.Constants._
 import utility.TestingFunctions._
-import musvit.common.OpCodes
+import musvit.common.ControlSignals
 
 class ALUTester extends FunctionalUnitTester {
 

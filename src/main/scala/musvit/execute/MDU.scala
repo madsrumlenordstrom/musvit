@@ -4,7 +4,7 @@ import chisel3._
 import chisel3.util._
 
 import musvit.MusvitConfig
-import musvit.common.OpCodes
+import musvit.common.ControlSignals
 import utility.Constants._
 import utility.RisingEdge
 import utility.Negate

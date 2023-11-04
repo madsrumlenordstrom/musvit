@@ -5,7 +5,7 @@ import chisel3.util._
 import chisel3.util.experimental.decode._
 
 import musvit.MusvitConfig
-import musvit.common.OpCodes
+import musvit.common.ControlSignals
 import utility.Constants._
 import utility.{BitsToByteVec, BarrelShifter, SignExtend}
 
@@ -41,7 +41,7 @@ object RAM {
   }
 }
 
-class MusvitRAMIO(config: MusvitConfig) extends Bundle with OpCodes {
+class MusvitRAMIO(config: MusvitConfig) extends Bundle with ControlSignals {
   val addr          = Input(UInt(log2Up(config.ramSize).W))
   val en            = Input(Bool())
   val op            = Input(UInt(OP_WIDTH.W))
@@ -50,7 +50,7 @@ class MusvitRAMIO(config: MusvitConfig) extends Bundle with OpCodes {
   val readData      = Output(UInt(WORD_WIDTH.W))  
 }
 
-class MusvitRAM(config: MusvitConfig) extends Module with OpCodes {
+class MusvitRAM(config: MusvitConfig) extends Module with ControlSignals {
   val io = IO(new MusvitRAMIO(config))
 
   // Addresses
@@ -89,8 +89,6 @@ class MusvitRAM(config: MusvitConfig) extends Module with OpCodes {
   byteOffsetReg := byteOffset
   val shifted = BarrelShifter.leftShift(readData, byteOffsetReg).asUInt
   val opReg = RegNext(io.op)
-  //val isSignedReg = RegNext(io.isSigned)
-  //val dataWidthReg = RegNext(io.dataWidth)
   
   when (RegNext(io.en && io.op === Mem.LOAD)) {
     io.readData := MuxCase(shifted, Seq(
