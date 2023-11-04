@@ -10,7 +10,7 @@ import utility.RisingEdge
 import utility.Negate
 import utility.SignExtend
 
-class Multiplier(config: MusvitConfig, cycles: Int = 4) extends FunctionalUnit(config) {
+class Multiplier(config: MusvitConfig, tag: Int, cycles: Int = 4) extends FunctionalUnit(config, tag) {
   val resultReg = RegInit(0.U((2 * WORD_WIDTH).W))
 
   val validReg = RegInit(false.B)
@@ -22,7 +22,7 @@ class Multiplier(config: MusvitConfig, cycles: Int = 4) extends FunctionalUnit(c
   val (counterValue, counterWrap) = Counter(0 until cycles, countEn, reset.asBool)
   val counterIsInit = counterValue === 0.U
   
-  when (RisingEdge(valid)) {
+  when (dataValid && busyReg && !fu.result.fire) {
     countEn := true.B
     signReg := MuxCase(false.B, Seq(
       (signed1 && signed2)  -> (data1.head(1) ^ data2.head(1)),
@@ -30,7 +30,6 @@ class Multiplier(config: MusvitConfig, cycles: Int = 4) extends FunctionalUnit(c
     ))
   }.otherwise {
     countEn := !counterIsInit
-    ready := false.B
   }
 
   val multiplicant = Mux(signed1, data1.asSInt.abs.asUInt, data1)
@@ -49,21 +48,21 @@ class Multiplier(config: MusvitConfig, cycles: Int = 4) extends FunctionalUnit(c
 
   val signedResult = Mux(signReg, Negate(resultReg), resultReg)
 
-  io.result.bits := Mux(op === MDU.MUL, signedResult.tail(WORD_WIDTH), signedResult.head(WORD_WIDTH))
+  fu.result.bits.data := Mux(op === MDU.MUL, signedResult.tail(WORD_WIDTH), signedResult.head(WORD_WIDTH))
 
   // Valid data logic
   when (counterWrap) {
     validReg := true.B
   }
 
-  when (validReg && io.result.ready) {
+  when (fu.result.fire) {
     validReg := false.B
   }
 
-  io.result.valid := validReg
+  fu.result.valid := validReg
 }
 
-class Divider(config: MusvitConfig) extends FunctionalUnit(config) {
+class Divider(config: MusvitConfig, tag: Int) extends FunctionalUnit(config, tag) {
   val remainderReg = RegInit(0.U((WORD_WIDTH + 1).W))
   val quotientReg = RegInit(0.U(WORD_WIDTH.W))
 
@@ -76,12 +75,11 @@ class Divider(config: MusvitConfig) extends FunctionalUnit(config) {
   val (counterValue, counterWrap) = Counter(0 until WORD_WIDTH, countEn, reset.asBool)
   val counterIsInit = counterValue === 0.U
 
-  when (RisingEdge(valid)) {
+  when (dataValid && busyReg && !fu.result.fire) {
     countEn := true.B
     signReg := signedOp && (data1.head(1).asBool ^ (data2.head(1).asBool && !remOp))
   }.otherwise {
     countEn := !counterIsInit
-    ready := false.B
   }
 
   val divisor = Mux(signedOp, data2.asSInt.abs.asUInt, data2)
@@ -96,16 +94,16 @@ class Divider(config: MusvitConfig) extends FunctionalUnit(config) {
 
   val unsignedResult = Mux(op === MDU.REM || op === MDU.REMU, remainderReg, quotientReg)
 
-  io.result.bits := Mux(signReg, Negate(unsignedResult), unsignedResult)
+  fu.result.bits.data := Mux(signReg, Negate(unsignedResult), unsignedResult)
 
   // Valid data logic
   when (counterWrap) {
     validReg := true.B
   }
 
-  when (validReg && io.result.ready) {
+  when (fu.result.fire) {
     validReg := false.B
   }
 
-  io.result.valid := validReg
+  fu.result.valid := validReg
 }

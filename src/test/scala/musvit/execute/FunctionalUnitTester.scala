@@ -15,9 +15,11 @@ import musvit.common.OpCodes
 class FunctionalUnitTester extends AnyFlatSpec with ChiselScalatestTester with OpCodes {
   val config = MusvitConfig.default
   val defaultTag = 5
+  val dummyTag = 0
 
   val iterations = 1000
   var steps = 0
+  val resetAfterPokes = true
 
   def step(clk: Clock, n: Int): Unit = {
     clk.step(n)
@@ -38,6 +40,10 @@ class FunctionalUnitTester extends AnyFlatSpec with ChiselScalatestTester with O
     dut.rs.ib(0).tag.poke(dut.tag.U)
     dut.rs.ib(0).data.poke(issueData)
     step(dut.clock, 1)
+    if (resetAfterPokes) {
+      dut.rs.ib(0).tag.poke(dummyTag)
+      dut.rs.ib(0).data.poke(issueBusFields(dut, 0, dummyTag, dummyTag, 0, 0))
+    }
   }
 
   def issueData(dut: FunctionalUnit, op: Int, data1: Int, data2: Int): Unit = {
@@ -48,7 +54,12 @@ class FunctionalUnitTester extends AnyFlatSpec with ChiselScalatestTester with O
     dut.rs.cdb(0).valid.poke(true.B)
     dut.rs.cdb(0).bits.tag.poke(tag.U)
     dut.rs.cdb(0).bits.data.poke(intToUInt(data))
-    dut.clock.step(1)
+    step(dut.clock, 1)
+    dut.rs.cdb(0).valid.poke(false.B)
+    if (resetAfterPokes) {
+      dut.rs.cdb(0).bits.tag.poke(dummyTag.U)
+      dut.rs.cdb(0).bits.data.poke(0.U)
+    }
   }
 
   def readCDB(dut: FunctionalUnit, expected: Int): Unit = {

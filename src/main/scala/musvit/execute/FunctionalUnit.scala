@@ -24,4 +24,9 @@ class FunctionalUnit(config: MusvitConfig, tag: Int) extends ReservationStation(
   val op    = rsReg.op
   val data1 = rsReg.fields(0).data
   val data2 = rsReg.fields(1).data
+
+  // Mark operation as done
+  when (fu.result.fire) {
+    busyReg := false.B
+  }
 }
