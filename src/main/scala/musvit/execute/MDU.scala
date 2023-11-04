@@ -43,7 +43,7 @@ class Multiplier(config: MusvitConfig, tag: Int, cycles: Int = 4) extends Functi
   }
 
   val shamtLookUp = VecInit(Seq.tabulate(cycles)( (i) => (i * (WORD_WIDTH / cycles)).U))
-  val reducedSums = (partialSums.reduce((a: UInt, b: UInt) => (a + b)) << shamtLookUp(counterValue)).asTypeOf(UInt((2 * WORD_WIDTH).W))
+  val reducedSums = (partialSums.reduceTree((a: UInt, b: UInt) => (a + b)) << shamtLookUp(counterValue)).asTypeOf(UInt((2 * WORD_WIDTH).W))
   resultReg := Mux(counterIsInit, reducedSums, resultReg + reducedSums)
 
   val signedResult = Mux(signReg, Negate(resultReg), resultReg)
