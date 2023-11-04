@@ -12,112 +12,51 @@ import utility.Constants._
 import utility.TestingFunctions._
 import musvit.common.OpCodes
 
-class ALUTester extends AnyFlatSpec with ChiselScalatestTester with OpCodes {
-  val config = MusvitConfig.default
-
-  val iterations = 1000
-  var steps = 0
+class ALUTester extends FunctionalUnitTester {
 
   "ALU" should "pass" in {
-    test(new ALU(config))
+    test(new ALU(config, defaultTag))
       .withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
         dut.clock.setTimeout(0)
 
-        def step(n: Int): Unit = {
-          dut.clock.step(n)
-          steps += n
-        }
-
-        def fuData(op: UInt, data1: UInt, data2: UInt): FunctionalUnitOperands = {
-          chiselTypeOf(dut.io.rs.bits).Lit(
-            _.op -> op,
-            _.data1 -> data1,
-            _.data2 -> data2,
-            )
-        }
-
-        def issue(operands: FunctionalUnitOperands): Unit = {
-          dut.io.rs.bits.poke(operands)
-          dut.io.rs.valid.poke(true.B)
-          step(1)
-        }
-
-        def read(expected: UInt): Unit = {
-          dut.io.result.ready.poke(true.B)
-          while (!dut.io.result.valid.peekBoolean()) {
-            step(1)
-          }
-          dut.io.result.bits.expect(expected)
-        }
-
         def add(data1: Int, data2: Int): Unit = {
-          val data = fuData(ALU.ADD.value.U, intToUInt(data1), intToUInt(data2))
-          issue(data)
-          val product = data1 + data2
-          read(intToUInt(product))
+           issueExpect(dut, ALU.ADD.value.toInt, data1, data2, data1 + data2)
         }
 
         def sub(data1: Int, data2: Int): Unit = {
-          val data = fuData(ALU.SUB.value.U, intToUInt(data1), intToUInt(data2))
-          issue(data)
-          val product = data1 - data2
-          read(intToUInt(product))
+           issueExpect(dut, ALU.SUB.value.toInt, data1, data2, data1 - data2)
         }
 
         def sll(data1: Int, data2: Int): Unit = {
-          val data = fuData(ALU.SLL.value.U, intToUInt(data1), intToUInt(data2))
-          issue(data)
-          val product = data1 << data2
-          read(intToUInt(product))
+           issueExpect(dut, ALU.SLL.value.toInt, data1, data2, data1 << data2)
         }
 
         def slt(data1: Int, data2: Int): Unit = {
-          val data = fuData(ALU.SLT.value.U, intToUInt(data1), intToUInt(data2))
-          issue(data)
-          val product = if (data1 < data2) 1 else 0
-          read(intToUInt(product))
+           issueExpect(dut, ALU.SLT.value.toInt, data1, data2, if (data1 < data2) 1 else 0)
         }
 
         def sltu(data1: Int, data2: Int): Unit = {
-          val data = fuData(ALU.SLTU.value.U, intToUInt(data1), intToUInt(data2))
-          issue(data)
-          val product = if ((data1.toLong & 0xffffffffL) < (data2.toLong & 0xffffffffL)) 1 else 0
-          read(intToUInt(product))
+           issueExpect(dut, ALU.SLTU.value.toInt, data1, data2, if ((data1.toLong & 0xffffffffL) < (data2.toLong & 0xffffffffL)) 1 else 0)
         }
 
         def xor(data1: Int, data2: Int): Unit = {
-          val data = fuData(ALU.XOR.value.U, intToUInt(data1), intToUInt(data2))
-          issue(data)
-          val product = data1 ^ data2
-          read(intToUInt(product))
+           issueExpect(dut, ALU.XOR.value.toInt, data1, data2, data1 ^ data2)
         }
 
         def srl(data1: Int, data2: Int): Unit = {
-          val data = fuData(ALU.SRL.value.U, intToUInt(data1), intToUInt(data2))
-          issue(data)
-          val product = data1 >>> data2
-          read(intToUInt(product))
+           issueExpect(dut, ALU.SRL.value.toInt, data1, data2, data1 >>> data2)
         }
 
         def sra(data1: Int, data2: Int): Unit = {
-          val data = fuData(ALU.SRA.value.U, intToUInt(data1), intToUInt(data2))
-          issue(data)
-          val product = data1 >> data2
-          read(intToUInt(product))
+           issueExpect(dut, ALU.SRA.value.toInt, data1, data2, data1 >> data2)
         }
 
         def or(data1: Int, data2: Int): Unit = {
-          val data = fuData(ALU.OR.value.U, intToUInt(data1), intToUInt(data2))
-          issue(data)
-          val product = data1 | data2
-          read(intToUInt(product))
+           issueExpect(dut, ALU.OR.value.toInt, data1, data2, data1 | data2)
         }
 
         def and(data1: Int, data2: Int): Unit = {
-          val data = fuData(ALU.AND.value.U, intToUInt(data1), intToUInt(data2))
-          issue(data)
-          val product = data1 & data2
-          read(intToUInt(product))
+           issueExpect(dut, ALU.AND.value.toInt, data1, data2, data1 & data2)
         }
 
         def randomTest(): Unit = {
