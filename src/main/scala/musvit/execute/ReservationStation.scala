@@ -24,7 +24,7 @@ class ReservationStation(config: MusvitConfig, val tag: Int) extends Module {
   rs.ib.zipWithIndex.foreach{ case (ib, i) => 
     when(rs.ib(i).tag === tag.U && !busyReg) {
       rsReg := rs.ib(i).data
-      busyReg := true.B
+      busyReg := true.B // Functional unit will be responsible for setting this low
     }
   }
 
@@ -38,11 +38,6 @@ class ReservationStation(config: MusvitConfig, val tag: Int) extends Module {
         cdb.ready := true.B // not really used
       }  
     }
-
-    // Check if result has been written
-    when (busyReg && cdb.valid && cdb.bits.tag === tag.U) {
-      busyReg := false.B
-    }
   }
 }
 
@@ -53,4 +48,9 @@ class TestingReservationStation(config: MusvitConfig, tag: Int) extends Reservat
   debug.bits.op := rsReg.op
   debug.bits.data1 := rsReg.fields(0).data
   debug.bits.data2 := rsReg.fields(1).data
+  
+  // Mark operation as done
+  when (debug.fire) {
+    busyReg := false.B
+  }
 }

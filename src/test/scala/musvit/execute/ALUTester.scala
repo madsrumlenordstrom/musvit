@@ -20,43 +20,43 @@ class ALUTester extends FunctionalUnitTester {
         dut.clock.setTimeout(0)
 
         def add(data1: Int, data2: Int): Unit = {
-           issueExpect(dut, ALU.ADD.value.toInt, data1, data2, data1 + data2)
+           issueExpect(dut, ALU.ADD.value.toInt, data1, data2, expected = data1 + data2)
         }
 
         def sub(data1: Int, data2: Int): Unit = {
-           issueExpect(dut, ALU.SUB.value.toInt, data1, data2, data1 - data2)
+           issueExpect(dut, ALU.SUB.value.toInt, data1, data2, expected = data1 - data2)
         }
 
         def sll(data1: Int, data2: Int): Unit = {
-           issueExpect(dut, ALU.SLL.value.toInt, data1, data2, data1 << data2)
+           issueExpect(dut, ALU.SLL.value.toInt, data1, data2, expected = data1 << data2)
         }
 
         def slt(data1: Int, data2: Int): Unit = {
-           issueExpect(dut, ALU.SLT.value.toInt, data1, data2, if (data1 < data2) 1 else 0)
+           issueExpect(dut, ALU.SLT.value.toInt, data1, data2, expected = if (data1 < data2) 1 else 0)
         }
 
         def sltu(data1: Int, data2: Int): Unit = {
-           issueExpect(dut, ALU.SLTU.value.toInt, data1, data2, if ((data1.toLong & 0xffffffffL) < (data2.toLong & 0xffffffffL)) 1 else 0)
+           issueExpect(dut, ALU.SLTU.value.toInt, data1, data2, expected = if ((data1.toLong & 0xffffffffL) < (data2.toLong & 0xffffffffL)) 1 else 0)
         }
 
         def xor(data1: Int, data2: Int): Unit = {
-           issueExpect(dut, ALU.XOR.value.toInt, data1, data2, data1 ^ data2)
+           issueExpect(dut, ALU.XOR.value.toInt, data1, data2, expected = data1 ^ data2)
         }
 
         def srl(data1: Int, data2: Int): Unit = {
-           issueExpect(dut, ALU.SRL.value.toInt, data1, data2, data1 >>> data2)
+           issueExpect(dut, ALU.SRL.value.toInt, data1, data2, expected = data1 >>> data2)
         }
 
         def sra(data1: Int, data2: Int): Unit = {
-           issueExpect(dut, ALU.SRA.value.toInt, data1, data2, data1 >> data2)
+           issueExpect(dut, ALU.SRA.value.toInt, data1, data2, expected = data1 >> data2)
         }
 
         def or(data1: Int, data2: Int): Unit = {
-           issueExpect(dut, ALU.OR.value.toInt, data1, data2, data1 | data2)
+           issueExpect(dut, ALU.OR.value.toInt, data1, data2, expected = data1 | data2)
         }
 
         def and(data1: Int, data2: Int): Unit = {
-           issueExpect(dut, ALU.AND.value.toInt, data1, data2, data1 & data2)
+           issueExpect(dut, ALU.AND.value.toInt, data1, data2, expected = data1 & data2)
         }
 
         def randomTest(): Unit = {

@@ -31,6 +31,7 @@ object CommonDataBus {
 class IssueBusFields(config: MusvitConfig) extends Bundle with OpCodes {
   val op = UInt(OP_WIDTH.W)
   val fields = Vec(2, CommonDataBus(config))
+  val imm = UInt(WORD_WIDTH.W)
 }
 
 object IssueBus {

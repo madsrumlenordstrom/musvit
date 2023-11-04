@@ -20,19 +20,19 @@ class MultiplierTester extends FunctionalUnitTester {
         dut.clock.setTimeout(50)
 
         def mul(data1: Int, data2: Int): Unit = {
-          issueExpect(dut, MDU.MUL.value.toInt, data1, data2, (data1.toLong * data2.toLong & 0x00000000ffffffffL).toInt)
+          issueExpect(dut, MDU.MUL.value.toInt, data1, data2, expected = (data1.toLong * data2.toLong & 0x00000000ffffffffL).toInt)
         }
 
         def mulh(data1: Int, data2: Int): Unit = {
-          issueExpect(dut, MDU.MULH.value.toInt, data1, data2, (data1.toLong * data2.toLong >> 32).toInt)
+          issueExpect(dut, MDU.MULH.value.toInt, data1, data2, expected = (data1.toLong * data2.toLong >> 32).toInt)
         }
 
         def mulhsu(data1: Int, data2: Int): Unit = {
-          issueExpect(dut, MDU.MULHSU.value.toInt, data1, data2, (data1.toLong * (data2.toLong & 0xffffffffL) >> 32).toInt)
+          issueExpect(dut, MDU.MULHSU.value.toInt, data1, data2, expected = (data1.toLong * (data2.toLong & 0xffffffffL) >> 32).toInt)
         }
 
         def mulhu(data1: Int, data2: Int): Unit = {
-          issueExpect(dut, MDU.MULHU.value.toInt, data1, data2, ((data1.toLong & 0xffffffffL) * (data2.toLong & 0xffffffffL) >> 32).toInt)
+          issueExpect(dut, MDU.MULHU.value.toInt, data1, data2,  expected =((data1.toLong & 0xffffffffL) * (data2.toLong & 0xffffffffL) >> 32).toInt)
         }
 
         def randomTest(): Unit = {
@@ -73,19 +73,19 @@ class DividerTester extends FunctionalUnitTester {
         dut.clock.setTimeout(0)
 
         def div(data1: Int, data2: Int): Unit = {
-          issueExpect(dut, MDU.DIV.value.toInt, data1, data2, data1 / data2)
+          issueExpect(dut, MDU.DIV.value.toInt, data1, data2, expected = data1 / data2)
         }
 
         def divu(data1: Int, data2: Int): Unit = {
-          issueExpect(dut, MDU.DIVU.value.toInt, data1, data2, ((data1.toLong & 0xffffffffL) / (data2.toLong & 0xffffffffL)).toInt)
+          issueExpect(dut, MDU.DIVU.value.toInt, data1, data2, expected = ((data1.toLong & 0xffffffffL) / (data2.toLong & 0xffffffffL)).toInt)
         }
 
         def rem(data1: Int, data2: Int): Unit = {
-          issueExpect(dut, MDU.REM.value.toInt, data1, data2, data1 % data2)
+          issueExpect(dut, MDU.REM.value.toInt, data1, data2, expected = data1 % data2)
         }
 
         def remu(data1: Int, data2: Int): Unit = {
-          issueExpect(dut, MDU.REMU.value.toInt, data1, data2, ((data1.toLong & 0xffffffffL) % (data2.toLong & 0xffffffffL)).toInt)
+          issueExpect(dut, MDU.REMU.value.toInt, data1, data2, expected = ((data1.toLong & 0xffffffffL) % (data2.toLong & 0xffffffffL)).toInt)
         }
 
         def randomTest(): Unit = {

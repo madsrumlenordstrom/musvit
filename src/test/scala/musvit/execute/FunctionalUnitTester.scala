@@ -26,17 +26,18 @@ class FunctionalUnitTester extends AnyFlatSpec with ChiselScalatestTester with O
     steps += n
   }
 
-  def issueBusFields(dut: FunctionalUnit, op: Int, tag1: Int, tag2: Int, data1: Int, data2: Int): IssueBusFields = {
+  def issueBusFields(dut: ReservationStation, op: Int, tag1: Int, tag2: Int, data1: Int, data2: Int, imm: Int = 0): IssueBusFields = {
     chiselTypeOf(dut.rs.ib.head.data).Lit(
       _.op -> intToUInt(op),
       _.fields(0).tag -> intToUInt(tag1),
       _.fields(0).data -> intToUInt(data1),
       _.fields(1).tag -> intToUInt(tag2),
       _.fields(1).data -> intToUInt(data2),
+      _.imm -> intToUInt(imm),
     )
   }
 
-  def issue(dut: FunctionalUnit, issueData: IssueBusFields): Unit = {
+  def issue(dut: ReservationStation, issueData: IssueBusFields): Unit = {
     dut.rs.ib(0).tag.poke(dut.tag.U)
     dut.rs.ib(0).data.poke(issueData)
     step(dut.clock, 1)
@@ -46,11 +47,11 @@ class FunctionalUnitTester extends AnyFlatSpec with ChiselScalatestTester with O
     }
   }
 
-  def issueData(dut: FunctionalUnit, op: Int, data1: Int, data2: Int): Unit = {
-    issue(dut, issueBusFields(dut, op, dut.tag, dut.tag, data1, data2))
+  def issueData(dut: ReservationStation, op: Int, data1: Int, data2: Int, imm: Int = 0): Unit = {
+    issue(dut, issueBusFields(dut, op, dut.tag, dut.tag, data1, data2, imm))
   }
 
-  def writeCDB(dut: FunctionalUnit, tag: Int, data: Int): Unit = {
+  def writeCDB(dut: ReservationStation, tag: Int, data: Int): Unit = {
     dut.rs.cdb(0).valid.poke(true.B)
     dut.rs.cdb(0).bits.tag.poke(tag.U)
     dut.rs.cdb(0).bits.data.poke(intToUInt(data))
@@ -71,7 +72,7 @@ class FunctionalUnitTester extends AnyFlatSpec with ChiselScalatestTester with O
     dut.fu.result.bits.tag.expect(dut.tag.U)
   }
 
-  def issueExpect(dut: FunctionalUnit, op: Int, data1: Int, data2: Int, expected: Int): Unit = {
+  def issueExpect(dut: FunctionalUnit, op: Int, data1: Int, data2: Int, imm: Int = 0, expected: Int): Unit = {
     issueData(dut, op, data1, data2)
     readCDB(dut, expected)
     writeCDB(dut, dut.tag, expected)
