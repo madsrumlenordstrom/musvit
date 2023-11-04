@@ -110,7 +110,7 @@ class MultiplexedSevenSegmentDriver(
     extends Module {
   val io = IO(new MultiplexedSevenSegmentDriverIO(numOfDigits))
 
-  val CNT_MAX = ((clkFreq / 1000) - 1)
+  val CNT_MAX = ((clkFreq / 100) - 1)
   val (countValue, countTick) = Counter(0 until CNT_MAX)
   val segmentReg = RegInit(0.U(log2Up(numOfDigits).W))
 
