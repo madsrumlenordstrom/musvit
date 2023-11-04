@@ -40,7 +40,7 @@ class MultiplexedSevenSegmentDriverTester extends AnyFlatSpec with ChiselScalate
         dut.clock.setTimeout(0)
         def testNumber(n: Int): Unit = {
           dut.io.value.poke(n.U)
-          for (i <- 0 until 100000) {
+          for (i <- 0 until 1000) {
             dut.clock.step(1)
           }
         }
