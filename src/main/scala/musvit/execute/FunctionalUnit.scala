@@ -14,18 +14,14 @@ class FunctionalUnitOperands(config: MusvitConfig) extends Bundle with OpCodes {
 }
 
 class FunctionalUnitIO(config: MusvitConfig) extends Bundle {
-  val rs = Flipped(Decoupled(new FunctionalUnitOperands(config)))
-  val result = Decoupled(UInt(WORD_WIDTH.W))
+  val result = Decoupled(CommonDataBus(config))
 }
 
-class FunctionalUnit(config: MusvitConfig) extends Module with OpCodes {
-  val io = IO(new FunctionalUnitIO(config))
+class FunctionalUnit(config: MusvitConfig, tag: Int) extends ReservationStation(config, tag) with OpCodes {
+  val fu = IO(new FunctionalUnitIO(config))
+  fu.result.bits.tag := tag.U
 
-  val ready = WireDefault(false.B)
-
-  val valid = io.rs.valid
-  val op = io.rs.bits.op
-  val data1 = io.rs.bits.data1
-  val data2 = io.rs.bits.data2
-  io.rs.ready := ready
+  val op    = rsReg.op
+  val data1 = rsReg.fields(0).data
+  val data2 = rsReg.fields(1).data
 }

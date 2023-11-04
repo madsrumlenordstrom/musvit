@@ -7,14 +7,14 @@ import musvit.execute.FunctionalUnit
 import musvit.MusvitConfig
 import utility.Constants._
 
-class ALU (config: MusvitConfig) extends FunctionalUnit(config) {
+class ALU (config: MusvitConfig, tag: Int) extends FunctionalUnit(config, tag) {
   val shamt = data2(4, 0)
   
   val lt = data1.asSInt < data2.asSInt
   val ltu = data1 < data2
   val eq = data1 === data2
 
-  io.result.bits := MuxCase(0.U(WORD_WIDTH.W), Seq(
+  fu.result.bits.data := MuxCase(0.U(WORD_WIDTH.W), Seq(
     (op === ALU.ADD)  -> (data1 + data2),
     (op === ALU.SUB)  -> (data1 - data2),
     (op === ALU.SLL)  -> (data1 << shamt),
@@ -27,6 +27,5 @@ class ALU (config: MusvitConfig) extends FunctionalUnit(config) {
     (op === ALU.AND)  -> (data1 & data2),
   ))
 
-  io.result.valid := valid
-  ready := io.result.ready
+  fu.result.valid := dataValid
 }
