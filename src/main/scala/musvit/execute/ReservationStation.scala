@@ -10,43 +10,47 @@ import utility.Constants._
 class ReservationStationIO(config: MusvitConfig) extends Bundle with OpCodes {
   val ib = Vec(config.fetchWidth, Input(IssueBus(config)))                          // Issue bus
   val cdb = Flipped(Vec(config.fetchWidth, Decoupled(CommonDataBus(config))))       // Commmon data bus
-  val fu = Decoupled(new FunctionalUnitOperands(config))                                    // Functional unit
 }
 
-class ReservationStation(config: MusvitConfig, val tag: UInt) extends Module {
-  val io = IO(new ReservationStationIO(config))
+class ReservationStation(config: MusvitConfig, val tag: Int) extends Module {
+  val rs = IO(new ReservationStationIO(config))
 
   val busyReg = RegInit(false.B)
   val rsReg = RegInit(0.U.asTypeOf(new IssueBusFields(config)))
-  val dataValid = rsReg.fields.map(_.tag === tag)
+  val dataValidVec = rsReg.fields.map(_.tag === tag.U)
+  val dataValid = VecInit(dataValidVec).asUInt.andR
 
   // Get data from issue bus
-  io.ib.zipWithIndex.foreach{ case (ib, i) => 
-    when(io.ib(i).tag === tag && !busyReg) {
-      rsReg := io.ib(i).data
+  rs.ib.zipWithIndex.foreach{ case (ib, i) => 
+    when(rs.ib(i).tag === tag.U && !busyReg) {
+      rsReg := rs.ib(i).data
       busyReg := true.B
     }
   }
 
   // Look for valid data on common data bus
-  io.cdb.zipWithIndex.foreach { case (cdb, i) =>
+  rs.cdb.zipWithIndex.foreach { case (cdb, i) =>
     cdb.ready := false.B
     rsReg.fields.zipWithIndex.foreach{ case (fields, j) =>
-      when(!dataValid(j) && cdb.bits.tag === fields.tag && cdb.valid) {
+      when(!dataValidVec(j) && cdb.bits.tag === fields.tag && cdb.valid) {
         rsReg.fields(j).data := cdb.bits.data
-        rsReg.fields(j).tag := tag
+        rsReg.fields(j).tag := tag.U
         cdb.ready := true.B // not really used
       }  
     }
 
     // Check if result has been written
-    when (busyReg && cdb.valid && cdb.bits.tag === tag) {
+    when (busyReg && cdb.valid && cdb.bits.tag === tag.U) {
       busyReg := false.B
     }
   }
+}
 
-  io.fu.valid := VecInit(dataValid).asUInt.andR
-  io.fu.bits.op := rsReg.op
-  io.fu.bits.data1 := rsReg.fields(0).data
-  io.fu.bits.data2 := rsReg.fields(1).data
+class TestingReservationStation(config: MusvitConfig, tag: Int) extends ReservationStation(config, tag) {
+  val debug = IO(Decoupled(new FunctionalUnitOperands(config)))
+
+  debug.valid := dataValid
+  debug.bits.op := rsReg.op
+  debug.bits.data1 := rsReg.fields(0).data
+  debug.bits.data2 := rsReg.fields(1).data
 }

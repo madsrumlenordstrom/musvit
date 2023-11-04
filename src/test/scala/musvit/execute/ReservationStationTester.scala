@@ -14,15 +14,15 @@ import utility.TestingFunctions._
 class ReservationStationTester extends AnyFlatSpec with ChiselScalatestTester {
   val config = MusvitConfig.default
 
-  val moduleTag = 5.U
+  val moduleTag = 5
   val iterations = 1000
 
   "ReservationStation" should "pass" in {
-    test(new ReservationStation(config, moduleTag)).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
+    test(new TestingReservationStation(config, moduleTag)).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
       dut.clock.setTimeout(0)
 
       def rsData(op: UInt, tag1: UInt, tag2: UInt, data1: UInt, data2: UInt): IssueBusFields = {
-        chiselTypeOf(dut.io.ib.head.data).Lit(_.op -> op,
+        chiselTypeOf(dut.rs.ib.head.data).Lit(_.op -> op,
         _.fields(0).tag -> tag1,
         _.fields(0).data -> data1,
         _.fields(1).tag -> tag2,
@@ -31,15 +31,15 @@ class ReservationStationTester extends AnyFlatSpec with ChiselScalatestTester {
       }
 
       def getRandomRsData(): IssueBusFields = {
-        rsData(getRandomData(dut.io.ib(0).data.op.getWidth),
-        getRandomData(dut.io.ib(0).tag.getWidth),
-        getRandomData(dut.io.ib(0).tag.getWidth),
+        rsData(getRandomData(dut.rs.ib(0).data.op.getWidth),
+        getRandomData(dut.rs.ib(0).tag.getWidth),
+        getRandomData(dut.rs.ib(0).tag.getWidth),
         getRandomWord(),
         getRandomWord())
       }
 
       def fuData(op: UInt, data1: UInt, data2: UInt): FunctionalUnitOperands = {
-        chiselTypeOf(dut.io.fu.bits).Lit(
+        chiselTypeOf(dut.debug.bits).Lit(
           _.op -> op,
           _.data1 -> data1,
           _.data2 -> data2,
@@ -47,21 +47,21 @@ class ReservationStationTester extends AnyFlatSpec with ChiselScalatestTester {
       }
 
       def issue(tag: UInt, issueData: IssueBusFields): Unit = {
-        dut.io.ib(0).tag.poke(tag)
-        dut.io.ib(0).data.poke(issueData)
+        dut.rs.ib(0).tag.poke(tag)
+        dut.rs.ib(0).data.poke(issueData)
         dut.clock.step(1)
       }
 
       def read(expected: FunctionalUnitOperands): Unit = {
-        dut.io.fu.ready.poke(true.B)
-        dut.io.fu.valid.expect(true.B)
-        dut.io.fu.bits.expect(expected)
+        dut.debug.ready.poke(true.B)
+        dut.debug.valid.expect(true.B)
+        dut.debug.bits.expect(expected)
       }
 
       def writeCDB(tag: UInt, data: UInt): Unit = {
-        dut.io.cdb(0).valid.poke(true.B)
-        dut.io.cdb(0).bits.tag.poke(tag)
-        dut.io.cdb(0).bits.data.poke(data)
+        dut.rs.cdb(0).valid.poke(true.B)
+        dut.rs.cdb(0).bits.tag.poke(tag)
+        dut.rs.cdb(0).bits.data.poke(data)
         dut.clock.step(1)
       }
 
@@ -69,19 +69,19 @@ class ReservationStationTester extends AnyFlatSpec with ChiselScalatestTester {
         val data = getRandomRsData()
         var expected1 = data.fields(0).data
         var expected2 = data.fields(1).data
-        issue(moduleTag, data)
+        issue(moduleTag.U, data)
 
         var j = 0
-        while (!dut.io.fu.valid.peekBoolean()) {
-          if (j == moduleTag.litValue) {
+        while (!dut.debug.valid.peekBoolean()) {
+          if (j == moduleTag) {
             j += 1
           }
           val newData = getRandomWord()
           writeCDB(j.U, newData)
-          if (j == data.fields(0).tag.litValue && data.fields(0).data.litValue != moduleTag.litValue) {
+          if (j == data.fields(0).tag.litValue && data.fields(0).data.litValue != moduleTag) {
             expected1 = newData
           }
-          if (j == data.fields(1).tag.litValue && data.fields(1).data.litValue != moduleTag.litValue) {
+          if (j == data.fields(1).tag.litValue && data.fields(1).data.litValue != moduleTag) {
             expected2 = newData
           }
           j += 1
@@ -90,7 +90,7 @@ class ReservationStationTester extends AnyFlatSpec with ChiselScalatestTester {
         read(fuData(data.op, expected1, expected2))
 
         // Reset reservation station
-        writeCDB(moduleTag, 0x00.U)
+        writeCDB(moduleTag.U, 0x00.U)
       }
     }
   }
