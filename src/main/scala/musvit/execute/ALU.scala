@@ -7,7 +7,7 @@ import musvit.execute.FunctionalUnit
 import musvit.MusvitConfig
 import utility.Constants._
 
-class ALU (config: MusvitConfig, tag: Int) extends FunctionalUnit(config, tag) {
+class ALU (config: MusvitConfig) extends FunctionalUnit(config) {
   val shamt = data2(4, 0)
   
   val lt = data1.asSInt < data2.asSInt
@@ -27,5 +27,5 @@ class ALU (config: MusvitConfig, tag: Int) extends FunctionalUnit(config, tag) {
     (op === ALU.AND)  -> (data1 & data2),
   ))
 
-  fu.result.valid := dataValid
+  fu.result.valid := dataValid && busyReg
 }

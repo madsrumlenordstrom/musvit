@@ -11,9 +11,9 @@ class FunctionalUnitIO(config: MusvitConfig) extends Bundle {
   val result = Decoupled(CommonDataBus(config))
 }
 
-class FunctionalUnit(config: MusvitConfig, tag: Int) extends ReservationStation(config) with ControlSignals {
+class FunctionalUnit(config: MusvitConfig) extends ReservationStation(config) with ControlSignals {
   val fu = IO(new FunctionalUnitIO(config))
-  fu.result.bits.tag := tag.U
+  fu.result.bits.tag := rsReg.robTag
 
   val op    = rsReg.op
   val data1 = rsReg.src1.data
@@ -22,6 +22,7 @@ class FunctionalUnit(config: MusvitConfig, tag: Int) extends ReservationStation(
 
   // Mark operation as done
   when (fu.result.fire) {
-    busyReg := false.B
+    busyReg := rs.writeEn
+    rs.ready := true.B
   }
 }

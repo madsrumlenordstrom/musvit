@@ -76,7 +76,7 @@ class FunctionalUnitTester extends AnyFlatSpec with ChiselScalatestTester with C
   def issueData(dut: ReservationStation, op: Int, data1: Int, data2: Int, robTag: Int = dummyTag, imm: Int = 0): Unit = {
     val src1 = issueSource(dut, data1, true, dummyTag)
     val src2 = issueSource(dut, data2, true, dummyTag)
-    issue(dut, issueBus(dut, op, src1, src2, robTag, imm))
+    issue(dut, issueBus(dut, op, src1, src2, robTag, imm), Random.nextInt(config.fetchWidth))
   }
 
   def writeCDB(dut: ReservationStation, tag: Int, data: Int, cdbIdx: Int = 0): Unit = {
@@ -100,9 +100,8 @@ class FunctionalUnitTester extends AnyFlatSpec with ChiselScalatestTester with C
     dut.fu.result.bits.tag.expect(intToUInt(robTag))
   }
 
-  def issueExpect(dut: FunctionalUnit, op: Int, data1: Int, data2: Int, robTag: Int = dummyTag, imm: Int = 0, expected: Int): Unit = {
+  def issueExpect(dut: FunctionalUnit, op: Int, data1: Int, data2: Int, robTag: Int = Random.nextInt(config.robEntries), imm: Int = 0, expected: Int): Unit = {
     issueData(dut, op, data1, data2, robTag, imm)
     readCDB(dut, expected, robTag)
-    writeCDB(dut, robTag, expected) // Only here to emulate (no real function)
   }
 }
