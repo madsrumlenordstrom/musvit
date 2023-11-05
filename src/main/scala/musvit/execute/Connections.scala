@@ -7,37 +7,44 @@ import musvit.MusvitConfig
 import utility.Constants._
 import musvit.common.ControlSignals
 
-object ReservationStationTag {
-  def apply(config: MusvitConfig) = {
-    UInt(log2Up(config.rsNum).W)
+object ROBTag {
+  def apply(config: MusvitConfig): UInt = {
+    UInt(log2Up(config.robEntries).W) // TODO: figure out width
   }
 }
 
-class Tagged[T <: Data](gen: T, config: MusvitConfig) extends Bundle {
-  val tag = ReservationStationTag(config)
+class ROBTagged[T <: Data](gen: T, config: MusvitConfig) extends Bundle {
+  val tag = ROBTag(config)
   val data = gen
 }
 
-object Tagged {
-  def apply[T <: Data](gen: T, config: MusvitConfig): Tagged[T] = new Tagged(gen, config)
+object ROBTagged {
+  def apply[T <: Data](gen: T, config: MusvitConfig): ROBTagged[T] = new ROBTagged(gen, config)
 }
 
 object CommonDataBus {
   def apply(config: MusvitConfig) = {
-    Tagged(UInt(WORD_WIDTH.W), config)
+    ROBTagged(UInt(WORD_WIDTH.W), config)
   }
 }
 
-class IssueBusFields(config: MusvitConfig) extends Bundle with ControlSignals {
+class IssueSource(config: MusvitConfig) extends Bundle {
+  val data = UInt(WORD_WIDTH.W)
+  val valid = Bool()
+  val tag = ROBTag(config)
+}
+
+class IssueBus(config: MusvitConfig) extends Bundle with ControlSignals {
   val op = UInt(OP_WIDTH.W)
-  val fields = Vec(2, CommonDataBus(config))
+  val src1 = new IssueSource(config)
+  val src2 = new IssueSource(config)
+  val robTag = ROBTag(config)
   val imm = UInt(WORD_WIDTH.W)
-  //val dest = UInt(log2Up(config.rsNum).W) // Make ROB entry num
 }
 
 object IssueBus {
-  def apply(config: MusvitConfig) = {
-    Tagged(new IssueBusFields(config), config)
+  def apply(config: MusvitConfig): IssueBus = {
+    new IssueBus(config)
   }
 }
 

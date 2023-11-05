@@ -16,6 +16,8 @@ case class MusvitConfig(
     ramAddr: Long = 0x00001000L,    // Start address of RAM
     instQueueSize: Int = 8,         // Number of queue entries in instruction queue
     rsNum: Int = 8,                 // Number of reservation stations
+    lsuNum: Int = 2,                // Number of load store units
+    robEntries: Int = 16            // Number of entries in ROB each entry fits <fetchWidth> instructions
 )
 
 // TODO use BigInt instead of Int and Long for memory related stuff
