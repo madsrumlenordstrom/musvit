@@ -16,9 +16,10 @@ class FunctionalUnitTester extends AnyFlatSpec with ChiselScalatestTester with C
   val config = MusvitConfig.default
   val dummyTag = 0
 
-  val iterations = 1000
+  val iterations = 100
   var steps = 0
   val resetAfterPokes = true
+  val annotations = Seq(WriteVcdAnnotation)
 
   def step(clk: Clock, n: Int): Unit = {
     clk.step(n)

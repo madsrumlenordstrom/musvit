@@ -16,7 +16,7 @@ class ALUTester extends FunctionalUnitTester {
 
   "ALU" should "pass" in {
     test(new ALU(config))
-      .withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
+      .withAnnotations(annotations) { dut =>
         dut.clock.setTimeout(0)
 
         def add(data1: Int, data2: Int): Int = { data1 + data2 }

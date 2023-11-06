@@ -16,7 +16,7 @@ class MultiplierTester extends FunctionalUnitTester {
 
   "Multiplier" should "pass" in {
     test(new Multiplier(config))
-      .withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
+      .withAnnotations(annotations) { dut =>
         dut.clock.setTimeout(50)
 
         def mul(data1: Int, data2: Int): Int = { (data1.toLong * data2.toLong & 0x00000000ffffffffL).toInt }
@@ -61,7 +61,7 @@ class MultiplierTester extends FunctionalUnitTester {
 class DividerTester extends FunctionalUnitTester {
   "Divider" should "pass" in {
     test(new Divider(config))
-      .withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
+      .withAnnotations(annotations) { dut =>
         dut.clock.setTimeout(0)
 
         def div(data1: Int, data2: Int): Int = { data1 / data2 }

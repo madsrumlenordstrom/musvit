@@ -13,7 +13,7 @@ import utility.TestingFunctions._
 
 class ReservationStationTester extends FunctionalUnitTester {
   "ReservationStation" should "pass" in {
-    test(new TestingReservationStation(config)).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
+    test(new TestingReservationStation(config)).withAnnotations(annotations) { dut =>
       dut.clock.setTimeout(0)
 
       def readRS(expected: IssueBus): Unit = {
