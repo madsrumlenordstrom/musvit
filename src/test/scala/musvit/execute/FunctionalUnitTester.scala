@@ -104,4 +104,8 @@ class FunctionalUnitTester extends AnyFlatSpec with ChiselScalatestTester with C
     issueData(dut, op, data1, data2, robTag, imm)
     readCDB(dut, expected, robTag)
   }
+
+  def issueExpectFromFunction(dut: FunctionalUnit, op: Int, data1: Int, data2: Int, robTag: Int = Random.nextInt(config.robEntries), imm: Int = 0, func: (Int, Int) => Int): Unit = {
+    issueExpect(dut, op, data1, data2, robTag, imm, func(data1, data2))
+  }
 }

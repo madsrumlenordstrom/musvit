@@ -10,7 +10,7 @@ import utility.RisingEdge
 import utility.Negate
 import utility.SignExtend
 
-class Multiplier(config: MusvitConfig, tag: Int, cycles: Int = 4) extends FunctionalUnit(config, tag) {
+class Multiplier(config: MusvitConfig, cycles: Int = 4) extends FunctionalUnit(config) {
   val resultReg = RegInit(0.U((2 * WORD_WIDTH).W))
 
   val validReg = RegInit(false.B)
@@ -19,10 +19,10 @@ class Multiplier(config: MusvitConfig, tag: Int, cycles: Int = 4) extends Functi
   val signed2 = op === MDU.MUL || op === MDU.MULH
 
   val countEn = WireDefault(false.B)
-  val (counterValue, counterWrap) = Counter(0 until cycles, countEn, reset.asBool)
+  val (counterValue, counterWrap) = Counter(0 until cycles, countEn, rs.flush)
   val counterIsInit = counterValue === 0.U
   
-  when (dataValid && busyReg && !fu.result.fire) {
+  when (dataValid && busyReg && !validReg) {
     countEn := true.B
     signReg := MuxCase(false.B, Seq(
       (signed1 && signed2)  -> (data1.head(1) ^ data2.head(1)),
@@ -59,10 +59,10 @@ class Multiplier(config: MusvitConfig, tag: Int, cycles: Int = 4) extends Functi
     validReg := false.B
   }
 
-  fu.result.valid := validReg
+  fu.result.valid := validReg && busyReg
 }
 
-class Divider(config: MusvitConfig, tag: Int) extends FunctionalUnit(config, tag) {
+class Divider(config: MusvitConfig) extends FunctionalUnit(config) {
   val remainderReg = RegInit(0.U((WORD_WIDTH + 1).W))
   val quotientReg = RegInit(0.U(WORD_WIDTH.W))
 
@@ -72,10 +72,10 @@ class Divider(config: MusvitConfig, tag: Int) extends FunctionalUnit(config, tag
   val signReg = RegInit(false.B)
   
   val countEn = WireDefault(false.B)
-  val (counterValue, counterWrap) = Counter(0 until WORD_WIDTH, countEn, reset.asBool)
+  val (counterValue, counterWrap) = Counter(0 until WORD_WIDTH, countEn, rs.flush)
   val counterIsInit = counterValue === 0.U
 
-  when (dataValid && busyReg && !fu.result.fire) {
+  when (dataValid && busyReg && !validReg) {
     countEn := true.B
     signReg := signedOp && (data1.head(1).asBool ^ (data2.head(1).asBool && !remOp))
   }.otherwise {
@@ -105,5 +105,5 @@ class Divider(config: MusvitConfig, tag: Int) extends FunctionalUnit(config, tag
     validReg := false.B
   }
 
-  fu.result.valid := validReg
+  fu.result.valid := validReg && busyReg
 }

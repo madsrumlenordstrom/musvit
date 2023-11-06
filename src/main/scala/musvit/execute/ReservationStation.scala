@@ -12,7 +12,7 @@ class ReservationStationIO(config: MusvitConfig) extends Bundle with ControlSign
   val ibIdx = Input(UInt(config.fetchWidth.W))                                // Index of issue bus to read
   val writeEn = Input(Bool())
   val cdb = Flipped(Vec(config.fetchWidth, Valid(CommonDataBus(config)))) // Commmon data bus for monitor
-  val busy = Output(Bool())
+  val ready = Output(Bool())
   val flush = Input(Bool())
 }
 
@@ -21,7 +21,7 @@ class ReservationStation(config: MusvitConfig) extends Module {
 
   // Busy indicator
   val busyReg = RegInit(false.B)
-  rs.busy := busyReg
+  rs.ready := !busyReg
   //assert(busyReg && rs.writeEn, "ERROR: busyReg and rs.writeEn was true at the same time")
 
   // Source data
