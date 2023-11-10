@@ -57,6 +57,20 @@ class ReorderBufferTester extends AnyFlatSpec with ChiselScalatestTester {
         dut.io.commit.ready.poke(false.B)
       }
 
+      def read(robTag: Int, expect: Int): Unit = {
+        dut.io.read(0).robTag1.poke(intToUInt(robTag))
+        dut.io.read(0).data1.expect(intToUInt(expect))
+        dut.io.read(0).robTag2.poke(intToUInt(robTag))
+        dut.io.read(0).data2.expect(intToUInt(expect))
+      }
+
+      def write(robTag: Int, data: Int): Unit = {
+        dut.io.cdb(0).valid.poke(true.B)
+        dut.io.cdb(0).bits.tag.poke(intToUInt(robTag))
+        dut.io.cdb(0).bits.data.poke(intToUInt(data))
+        dut.clock.step(1)
+      }
+
       // Issue      
       while (dut.io.issue.ready.peekBoolean()) {
         val data = Seq.fill(config.fetchWidth)(reorderBufferEntry(true, Random.nextInt(), Random.nextInt(), Random.nextInt(bitWidthToUIntMax(dut.io.issue.bits.head.commit.inst.getWidth).toInt)))
@@ -70,12 +84,27 @@ class ReorderBufferTester extends AnyFlatSpec with ChiselScalatestTester {
         commit(expected)
       }
 
-      // Test flush      
+      // Issue      
       while (dut.io.issue.ready.peekBoolean()) {
         val data = Seq.fill(config.fetchWidth)(reorderBufferEntry(true, Random.nextInt(), Random.nextInt(), Random.nextInt(bitWidthToUIntMax(dut.io.issue.bits.head.commit.inst.getWidth).toInt)))
         issue(data)
+        issues.enqueue(data)
       }
 
+      // Read operands
+      for (i <- 0 until config.robEntries) {
+        read(i, issues(i / config.fetchWidth)(i % config.fetchWidth).commit.data.litValue.toInt)
+        dut.clock.step(1)
+      }
+
+      // Write operands
+      for (i <- 0 until config.robEntries) {
+        val writeVal = Random.nextInt()
+        write(i, writeVal)
+        read(i, writeVal)
+        dut.clock.step(1)
+      }
+      
     }
   }
 }
