@@ -21,6 +21,7 @@ class ReorderBufferTester extends AnyFlatSpec with ChiselScalatestTester {
   "ReorderBuffer" should "pass" in {
     test(new ReorderBuffer(config)).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
       dut.clock.setTimeout(0)
+      dut.io.flush.poke(false.B)
 
       val issues = Queue[Seq[ReorderBufferEntry]]()
 
@@ -104,6 +105,14 @@ class ReorderBufferTester extends AnyFlatSpec with ChiselScalatestTester {
         read(i, writeVal)
         dut.clock.step(1)
       }
+
+      // Flush
+      dut.io.commit.valid.expect(true.B)
+      dut.io.issue.ready.expect(false.B)
+      dut.io.flush.poke(true.B)
+      dut.clock.step(1)
+      dut.io.commit.valid.expect(false.B)
+      dut.io.issue.ready.expect(true.B)
       
     }
   }

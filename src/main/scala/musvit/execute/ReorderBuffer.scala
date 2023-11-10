@@ -20,7 +20,7 @@ class ReorderBufferReadPort(config: MusvitConfig) extends Bundle {
 }
 
 class ReorderBufferIO(config: MusvitConfig) extends Bundle {
-  //val flush = Output(Bool())
+  val flush = Input(Bool())
   val issue = Flipped(Decoupled(Vec(config.fetchWidth, new ReorderBufferEntry(config))))
   val commit = Decoupled(Vec(config.fetchWidth, CommitBus(config)))
   val read = Vec(config.fetchWidth, new ReorderBufferReadPort(config))
@@ -39,7 +39,6 @@ class ReorderBuffer(config: MusvitConfig) extends Module with ControlSignals {
   val full = ptr_match && maybe_full
   val do_enq = WireDefault(io.issue.fire)
   val do_deq = WireDefault(io.commit.fire)
-  val flush = false.B
 
   val rob = Reg(Vec(entries, Vec(config.fetchWidth, new ReorderBufferEntry(config))))
   val robAddrWidth = ROBTag(config).getWidth - log2Up(config.fetchWidth)
@@ -61,7 +60,7 @@ class ReorderBuffer(config: MusvitConfig) extends Module with ControlSignals {
   when(do_enq =/= do_deq) {
     maybe_full := do_enq
   }
-  when(flush) {
+  when(io.flush) {
     enq_ptr.reset()
     deq_ptr.reset()
     maybe_full := false.B
