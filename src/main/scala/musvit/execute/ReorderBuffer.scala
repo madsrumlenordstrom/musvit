@@ -15,8 +15,8 @@ class ReorderBufferEntry(config: MusvitConfig) extends Bundle {
 class ReorderBufferReadPort(config: MusvitConfig) extends Bundle {
   val robTag1 = Input(ROBTag(config))
   val robTag2 = Input(ROBTag(config))
-  val data1 = Output(UInt(WORD_WIDTH.W))
-  val data2 = Output(UInt(WORD_WIDTH.W))
+  val data1 = Valid(UInt(WORD_WIDTH.W))
+  val data2 = Valid(UInt(WORD_WIDTH.W))
 }
 
 class ReorderBufferIO(config: MusvitConfig) extends Bundle {
@@ -73,8 +73,10 @@ class ReorderBuffer(config: MusvitConfig) extends Module with ControlSignals {
 
   // Read operands
   for (i <- 0 until io.read.length) {
-    io.read(i).data1 := robTagToRobEntry(io.read(i).robTag1).commit.data
-    io.read(i).data2 := robTagToRobEntry(io.read(i).robTag2).commit.data
+    io.read(i).data1.bits := robTagToRobEntry(io.read(i).robTag1).commit.data
+    io.read(i).data1.valid := robTagToRobEntry(io.read(i).robTag1).ready
+    io.read(i).data2.bits := robTagToRobEntry(io.read(i).robTag2).commit.data
+    io.read(i).data2.valid := robTagToRobEntry(io.read(i).robTag2).ready
   }
 
   // Write results from CDB

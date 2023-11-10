@@ -60,9 +60,11 @@ class ReorderBufferTester extends AnyFlatSpec with ChiselScalatestTester {
 
       def read(robTag: Int, expect: Int): Unit = {
         dut.io.read(0).robTag1.poke(intToUInt(robTag))
-        dut.io.read(0).data1.expect(intToUInt(expect))
+        dut.io.read(0).data1.bits.expect(intToUInt(expect))
+        dut.io.read(0).data1.valid.expect(true.B)
         dut.io.read(0).robTag2.poke(intToUInt(robTag))
-        dut.io.read(0).data2.expect(intToUInt(expect))
+        dut.io.read(0).data2.bits.expect(intToUInt(expect))
+        dut.io.read(0).data2.valid.expect(true.B)
       }
 
       def write(robTag: Int, data: Int): Unit = {
