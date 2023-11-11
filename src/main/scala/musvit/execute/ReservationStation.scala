@@ -26,7 +26,7 @@ class ReservationStation(config: MusvitConfig) extends Module {
 
   // Source data
   val rsReg = RegInit(0.U.asTypeOf(IssueBus(config)))
-  val dataValid = rsReg.src1.valid && rsReg.src2.valid
+  val dataValid = rsReg.src1.data.valid && rsReg.src2.data.valid
 
   when (rs.writeEn) {
     rsReg := rs.ib(rs.ibIdx)
@@ -36,9 +36,9 @@ class ReservationStation(config: MusvitConfig) extends Module {
   def connectCDB(isReg: IssueSource): Unit = {
     // Look for valid data on common data bus
     rs.cdb.zipWithIndex.foreach { case (cdb, i) =>
-      when (!isReg.valid && cdb.bits.tag === isReg.tag && cdb.valid) {
-        isReg.data := cdb.bits.data
-        isReg.valid := true.B
+      when (!isReg.data.valid && cdb.bits.tag === isReg.tag && cdb.valid) {
+        isReg.data.bits := cdb.bits.data
+        isReg.data.valid := true.B
       }
     }
   }

@@ -29,8 +29,7 @@ object CommonDataBus {
 }
 
 class IssueSource(config: MusvitConfig) extends Bundle {
-  val data = UInt(WORD_WIDTH.W)
-  val valid = Bool()
+  val data = Valid(UInt(WORD_WIDTH.W))
   val tag = ROBTag(config)
 }
 

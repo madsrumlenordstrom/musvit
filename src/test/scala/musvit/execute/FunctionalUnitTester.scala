@@ -28,8 +28,8 @@ class FunctionalUnitTester extends AnyFlatSpec with ChiselScalatestTester with C
 
   def issueSource(dut: ReservationStation, data: Int, valid: Boolean, tag: Int): IssueSource = {
     chiselTypeOf(dut.rs.ib.head.src1).Lit(
-      _.data -> intToUInt(data),
-      _.valid -> valid.B,
+      _.data.bits -> intToUInt(data),
+      _.data.valid -> valid.B,
       _.tag -> intToUInt(tag),
     )
   }

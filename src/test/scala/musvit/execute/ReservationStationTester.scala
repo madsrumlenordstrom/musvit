@@ -33,10 +33,10 @@ class ReservationStationTester extends FunctionalUnitTester {
         var j = 0
         while (!dut.debug.valid.peekBoolean()) {
           val newData = Random.nextInt()
-          if (j == data.src1.tag.litValue && !dut.debug.bits.src1.valid.peekBoolean()) {
+          if (j == data.src1.tag.litValue && !dut.debug.bits.src1.data.valid.peekBoolean()) {
             expected1 = newData
           }
-          if (j == data.src2.tag.litValue && !dut.debug.bits.src2.valid.peekBoolean()) {
+          if (j == data.src2.tag.litValue && !dut.debug.bits.src2.data.valid.peekBoolean()) {
             expected2 = newData
           }
           writeCDB(dut, j, newData, Random.nextInt(config.fetchWidth))

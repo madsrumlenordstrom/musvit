@@ -16,8 +16,8 @@ class FunctionalUnit(config: MusvitConfig) extends ReservationStation(config) wi
   fu.result.bits.tag := rsReg.robTag
 
   val op    = rsReg.op
-  val data1 = rsReg.src1.data
-  val data2 = rsReg.src2.data
+  val data1 = rsReg.src1.data.bits
+  val data2 = rsReg.src2.data.bits
   val imm   = rsReg.imm
 
   // Mark operation as done
