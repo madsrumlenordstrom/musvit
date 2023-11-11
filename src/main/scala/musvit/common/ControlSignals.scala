@@ -79,4 +79,15 @@ trait ControlSignals {
 
     def X:      BitPat = BitPat("b??")
   }
+
+  // Immediate formats
+  object Imm {
+    def I: BitPat = BitPat("b000")
+    def S: BitPat = BitPat("b001")
+    def B: BitPat = BitPat("b010")
+    def J: BitPat = BitPat("b011")
+    def U: BitPat = BitPat("b100")
+
+    def X: BitPat = BitPat("b???")
+  }
 }

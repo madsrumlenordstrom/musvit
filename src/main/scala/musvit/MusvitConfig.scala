@@ -17,7 +17,8 @@ case class MusvitConfig(
     instQueueSize: Int = 8,         // Number of queue entries in instruction queue
     rsNum: Int = 8,                 // Number of reservation stations
     lsuNum: Int = 2,                // Number of load store units
-    robEntries: Int = 16            // Number of entries in ROB each entry fits <fetchWidth> instructions
+    robEntries: Int = 32            // Number of rows in ROB each row fits <fetchWidth> instructions
+    // is robRows a better name?
 )
 
 // TODO use BigInt instead of Int and Long for memory related stuff
