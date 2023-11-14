@@ -3,7 +3,9 @@ package musvit.common
 import chisel3._
 import chisel3.util._
 
-trait ControlSignals {
+import utility.Constants._
+
+trait ControlValues {
   // Generic yes, no and don't care
   def Y:      BitPat = BitPat("b1")
   def N:      BitPat = BitPat("b0")
@@ -52,6 +54,13 @@ trait ControlSignals {
     def OR:     BitPat = BitPat("b0110")
     def AND:    BitPat = BitPat("b0111")
 
+    def BEQ:    BitPat = BitPat("b1011")
+    def BNE:    BitPat = BitPat("b1001")
+    def BLT:    BitPat = BitPat("b1100")
+    def BGE:    BitPat = BitPat("b1010")
+    def BLTU:   BitPat = BitPat("b1110")
+    def BGEU:   BitPat = BitPat("b1111")
+
     def X:      BitPat = BitPat("b????")
   }
 
@@ -80,6 +89,16 @@ trait ControlSignals {
     def X:      BitPat = BitPat("b??")
   }
 
+  // Writeback type
+  object WB {
+    def MEM:  BitPat = BitPat("b00") // Write to memory
+    def REG:  BitPat = BitPat("b01") // Write to register file
+    def PC:   BitPat = BitPat("b10") // Write to PC
+    def JMP:  BitPat = BitPat("b11") // Write both reg and PC
+
+    def X:    BitPat = BitPat("b??")
+  }
+
   // Immediate formats
   object Imm {
     def I: BitPat = BitPat("b000")
@@ -90,4 +109,37 @@ trait ControlSignals {
 
     def X: BitPat = BitPat("b???")
   }
+
+  object FU {
+    def ALU: BitPat = BitPat("b00")
+    def MUL: BitPat = BitPat("b01")
+    def DIV: BitPat = BitPat("b10")
+    def LSU: BitPat = BitPat("b11")
+
+    def X:   BitPat = BitPat("b??")
+  }
+
+
+  object OP1 {
+    def RS1:  BitPat = BitPat("b0")
+    def PC:   BitPat = BitPat("b1")
+
+    def X:    BitPat = BitPat("b?")
+  }
+  
+  object OP2 {
+    def RS2:  BitPat = BitPat("b0")
+    def IMM:  BitPat = BitPat("b1")
+
+    def X:    BitPat = BitPat("b?")
+  }
+}
+
+class ControlSignals extends Bundle with ControlValues {
+  val op = UInt(OP_WIDTH.W)
+  val rd = UInt(REG_ADDR_WIDTH.W)
+  val rs1 = UInt(REG_ADDR_WIDTH.W)
+  val rs2 = UInt(REG_ADDR_WIDTH.W)
+  val immType = UInt(Imm.X.width.W)
+  val robType = UInt(ROB.X.width.W)
 }

@@ -5,7 +5,7 @@ import chisel3.util._
 import chisel3.util.experimental.decode._
 
 import musvit.MusvitConfig
-import musvit.common.ControlSignals
+import musvit.common.ControlValues
 import utility.Constants._
 import utility.{BitsToByteVec, BarrelShifter, SignExtend}
 
@@ -41,7 +41,7 @@ object RAM {
   }
 }
 
-class MusvitRAMIO(config: MusvitConfig) extends Bundle with ControlSignals {
+class MusvitRAMIO(config: MusvitConfig) extends Bundle with ControlValues {
   val addr          = Input(UInt(log2Up(config.ramSize).W))
   val en            = Input(Bool())
   val op            = Input(UInt(OP_WIDTH.W))
@@ -50,7 +50,7 @@ class MusvitRAMIO(config: MusvitConfig) extends Bundle with ControlSignals {
   val readData      = Output(UInt(WORD_WIDTH.W))  
 }
 
-class MusvitRAM(config: MusvitConfig) extends Module with ControlSignals {
+class MusvitRAM(config: MusvitConfig) extends Module with ControlValues {
   val io = IO(new MusvitRAMIO(config))
 
   // Addresses

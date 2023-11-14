@@ -8,7 +8,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import utility.Constants._
 import utility.Functions._
 import musvit.MusvitConfig
-import musvit.common.ControlSignals
+import musvit.common.ControlValues
 
 class RAMTester extends AnyFlatSpec with ChiselScalatestTester {
 
@@ -68,7 +68,7 @@ class RAMTester extends AnyFlatSpec with ChiselScalatestTester {
   }
 }
 
-class MusvitRAMTester extends AnyFlatSpec with ChiselScalatestTester with ControlSignals {
+class MusvitRAMTester extends AnyFlatSpec with ChiselScalatestTester with ControlValues {
 
   // Test configuration
   val testFile = "random"

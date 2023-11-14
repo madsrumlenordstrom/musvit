@@ -4,10 +4,10 @@ import chisel3._
 import chisel3.util._
 
 import musvit.MusvitConfig
-import musvit.common.ControlSignals
+import musvit.common.ControlValues
 import utility.Constants._
 
-class ReservationStationIO(config: MusvitConfig) extends Bundle with ControlSignals {
+class ReservationStationIO(config: MusvitConfig) extends Bundle with ControlValues {
   val ib = Vec(config.fetchWidth, Input(IssueBus(config)))                    // Issue bus
   val ibIdx = Input(UInt(config.fetchWidth.W))                                // Index of issue bus to read
   val writeEn = Input(Bool())

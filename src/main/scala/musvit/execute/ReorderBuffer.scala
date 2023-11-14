@@ -5,7 +5,7 @@ import chisel3.util._
 
 import utility.Constants._
 import musvit.MusvitConfig
-import musvit.common.ControlSignals
+import musvit.common.ControlValues
 
 class ReorderBufferEntry(config: MusvitConfig) extends Bundle {
   val commit = CommitBus(config)
@@ -27,7 +27,7 @@ class ReorderBufferIO(config: MusvitConfig) extends Bundle {
   val cdb = Vec(config.fetchWidth, Flipped(Valid(CommonDataBus(config))))
 }
 
-class ReorderBuffer(config: MusvitConfig) extends Module with ControlSignals {
+class ReorderBuffer(config: MusvitConfig) extends Module with ControlValues {
   val io = IO(new ReorderBufferIO(config))
 
   val entries = config.robEntries / config.fetchWidth

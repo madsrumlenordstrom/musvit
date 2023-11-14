@@ -5,15 +5,15 @@ import chisel3.util._
 
 import utility.Constants._
 import musvit.MusvitConfig
-import musvit.common.ControlSignals
+import musvit.common.ControlValues
 
-class ImmediateGeneratorIO extends Bundle with ControlSignals {
+class ImmediateGeneratorIO extends Bundle with ControlValues {
   val inst = Input(UInt(INST_WIDTH.W))
   val immType = Input(UInt(Imm.X.getWidth.W))
   val imm = Output(UInt(WORD_WIDTH.W))
 }
 
-class ImmediateGenerator extends Module with ControlSignals {
+class ImmediateGenerator extends Module with ControlValues {
   val io = IO(new ImmediateGeneratorIO())
 
   val inst = io.inst

@@ -5,7 +5,7 @@ import chisel3.util._
 
 import musvit.MusvitConfig
 import utility.Constants._
-import musvit.common.ControlSignals
+import musvit.common.ControlValues
 
 class RegisterFileReadPort(config: MusvitConfig) extends Bundle {
   val rs1 = Input(UInt(REG_ADDR_WIDTH.W))
@@ -19,7 +19,7 @@ class RegisterFileIO(config: MusvitConfig) extends Bundle {
   val commit = Decoupled(Vec(config.fetchWidth, CommitBus(config)))
 }
 
-class RegisterFile(config: MusvitConfig) extends Module with ControlSignals {
+class RegisterFile(config: MusvitConfig) extends Module with ControlValues {
   val io = IO(new RegisterFileIO(config))
 
   val rf = Reg(Vec(NUM_OF_REGS, UInt(WORD_WIDTH.W)))
@@ -28,7 +28,7 @@ class RegisterFile(config: MusvitConfig) extends Module with ControlSignals {
     io.read(i).data1 := rf(io.read(i).rs1)
     io.read(i).data2 := rf(io.read(i).rs2)
 
-    when (io.commit.valid && io.commit.bits(i).inst === ROB.REG) {
+    when (io.commit.valid && io.commit.bits(i).wb === WB.REG) {
       rf(io.commit.bits(i).addr) := io.commit.bits(i).data
     }
   }
