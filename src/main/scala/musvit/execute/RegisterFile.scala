@@ -29,7 +29,7 @@ class RegisterFile(config: MusvitConfig) extends Module with ControlValues {
     io.read(i).data2 := rf(io.read(i).rs2)
 
     when (io.commit.valid && io.commit.bits(i).wb === WB.REG) {
-      rf(io.commit.bits(i).addr) := io.commit.bits(i).data
+      rf(io.commit.bits(i).rd) := io.commit.bits(i).data
     }
   }
 
