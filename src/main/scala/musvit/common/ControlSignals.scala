@@ -79,22 +79,14 @@ trait ControlValues {
     def X:      BitPat = BitPat("b????")
   }
 
-  // Reorder buffer type entries
-  object ROB {
-    def REG:    BitPat = BitPat("b00")
-    def STORE:  BitPat = BitPat("b01")
-    def BRANCH: BitPat = BitPat("b10")
-    def NONE:   BitPat = BitPat("b11")
-
-    def X:      BitPat = BitPat("b??")
-  }
-
   // Writeback type
   object WB {
     def MEM:  BitPat = BitPat("b00") // Write to memory
     def REG:  BitPat = BitPat("b01") // Write to register file
     def PC:   BitPat = BitPat("b10") // Write to PC
     def JMP:  BitPat = BitPat("b11") // Write both reg and PC
+    /* JMP writeback takes whatever is in ROB data and set the PC the value.
+    PC+4 which is contained in ROB target is written to RF */
 
     def X:    BitPat = BitPat("b??")
   }
@@ -136,10 +128,11 @@ trait ControlValues {
 }
 
 class ControlSignals extends Bundle with ControlValues {
+  val valid = Bool()
   val op = UInt(OP_WIDTH.W)
-  val rd = UInt(REG_ADDR_WIDTH.W)
-  val rs1 = UInt(REG_ADDR_WIDTH.W)
-  val rs2 = UInt(REG_ADDR_WIDTH.W)
+  val fu = UInt(FU.X.getWidth.W)
+  val op1 = UInt(OP1.X.getWidth.W)
+  val op2 = UInt(OP2.X.getWidth.W)
   val immType = UInt(Imm.X.width.W)
-  val robType = UInt(ROB.X.width.W)
+  val wb = UInt(WB.X.width.W)
 }
