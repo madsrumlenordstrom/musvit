@@ -23,24 +23,18 @@ class ReorderBufferTester extends AnyFlatSpec with ChiselScalatestTester {
       dut.clock.setTimeout(0)
       dut.io.flush.poke(false.B)
 
-      val issues = Queue[Seq[ReorderBufferEntry]]()
+      val issues = Queue[Seq[CommitBus]]()
 
-      def reorderBufferEntry(ready: Boolean, data: Int, addr: Int, inst: Int): ReorderBufferEntry = {
+      def reorderBufferEntry(data: Int, target: Int, rd: Int, wb: Int): CommitBus = {
         chiselTypeOf(dut.io.issue.bits.head).Lit(
-          _.ready -> ready.B,
-          _.commit.data -> intToUInt(data),
-          _.commit.addr -> intToUInt(addr),
-          _.commit.inst -> intToUInt(inst),
+          _.data -> intToUInt(data),
+          _.target -> intToUInt(target),
+          _.rd -> intToUInt(rd),
+          _.wb -> intToUInt(wb),
         )
       }
 
-      def reorderBufferEntryToCommitBus(data: ReorderBufferEntry): CommitBus = {
-        chiselTypeOf(dut.io.commit.bits.head).Lit(
-          _ -> data.commit
-        )
-      }
-
-      def issue(data: Seq[ReorderBufferEntry]): Unit = {
+      def issue(data: Seq[CommitBus]): Unit = {
         dut.io.issue.valid.poke(true.B)
         for (i <- 0 until dut.io.issue.bits.length) {
           dut.io.issue.bits(i).poke(data(i))
@@ -58,13 +52,13 @@ class ReorderBufferTester extends AnyFlatSpec with ChiselScalatestTester {
         dut.io.commit.ready.poke(false.B)
       }
 
-      def read(robTag: Int, expect: Int): Unit = {
+      def read(robTag: Int, expect: Int, valid: Boolean): Unit = {
         dut.io.read(0).robTag1.poke(intToUInt(robTag))
         dut.io.read(0).data1.bits.expect(intToUInt(expect))
-        dut.io.read(0).data1.valid.expect(true.B)
+        dut.io.read(0).data1.valid.expect(valid.B)
         dut.io.read(0).robTag2.poke(intToUInt(robTag))
         dut.io.read(0).data2.bits.expect(intToUInt(expect))
-        dut.io.read(0).data2.valid.expect(true.B)
+        dut.io.read(0).data2.valid.expect(valid.B)
       }
 
       def write(robTag: Int, data: Int): Unit = {
@@ -76,27 +70,27 @@ class ReorderBufferTester extends AnyFlatSpec with ChiselScalatestTester {
 
       // Issue      
       while (dut.io.issue.ready.peekBoolean()) {
-        val data = Seq.fill(config.fetchWidth)(reorderBufferEntry(true, Random.nextInt(), Random.nextInt(), Random.nextInt(bitWidthToUIntMax(dut.io.issue.bits.head.commit.inst.getWidth).toInt)))
+        val data = Seq.fill(config.fetchWidth)(reorderBufferEntry(Random.nextInt(), Random.nextInt(), Random.nextInt(bitWidthToUIntMax(dut.io.issue.bits.head.rd.getWidth).toInt), Random.nextInt(bitWidthToUIntMax(dut.io.issue.bits.head.wb.getWidth).toInt)))
         issue(data)
         issues.enqueue(data)
       }
 
       // Commit
       while (dut.io.commit.valid.peekBoolean()) {
-        val expected = issues.dequeue().map(_.commit).toSeq
+        val expected = issues.dequeue().toSeq
         commit(expected)
       }
 
-      // Issue      
+      // Issue
       while (dut.io.issue.ready.peekBoolean()) {
-        val data = Seq.fill(config.fetchWidth)(reorderBufferEntry(true, Random.nextInt(), Random.nextInt(), Random.nextInt(bitWidthToUIntMax(dut.io.issue.bits.head.commit.inst.getWidth).toInt)))
+        val data = Seq.fill(config.fetchWidth)(reorderBufferEntry(Random.nextInt(), Random.nextInt(), Random.nextInt(bitWidthToUIntMax(dut.io.issue.bits.head.rd.getWidth).toInt), Random.nextInt(bitWidthToUIntMax(dut.io.issue.bits.head.wb.getWidth).toInt)))
         issue(data)
         issues.enqueue(data)
       }
-
+      
       // Read operands
       for (i <- 0 until config.robEntries) {
-        read(i, issues(i / config.fetchWidth)(i % config.fetchWidth).commit.data.litValue.toInt)
+        read(i, issues(i / config.fetchWidth)(i % config.fetchWidth).data.litValue.toInt, valid = false)
         dut.clock.step(1)
       }
 
@@ -104,7 +98,7 @@ class ReorderBufferTester extends AnyFlatSpec with ChiselScalatestTester {
       for (i <- 0 until config.robEntries) {
         val writeVal = Random.nextInt()
         write(i, writeVal)
-        read(i, writeVal)
+        read(i, writeVal, true)
         dut.clock.step(1)
       }
 
