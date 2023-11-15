@@ -14,9 +14,15 @@ class RegisterFileReadPort(config: MusvitConfig) extends Bundle {
   val data2 = Output(UInt(WORD_WIDTH.W))
 }
 
+class RegisterFileWritePort(config: MusvitConfig) extends Bundle {
+  val rd = Input(UInt(REG_ADDR_WIDTH.W))
+  val data = Input(UInt(WORD_WIDTH.W))
+  val en = Input(Bool())
+}
+
 class RegisterFileIO(config: MusvitConfig) extends Bundle {
   val read = Vec(config.fetchWidth, new RegisterFileReadPort(config))
-  val commit = Decoupled(Vec(config.fetchWidth, CommitBus(config)))
+  val write = Vec(config.fetchWidth, new RegisterFileWritePort(config))
 }
 
 class RegisterFile(config: MusvitConfig) extends Module with ControlValues {
@@ -28,8 +34,8 @@ class RegisterFile(config: MusvitConfig) extends Module with ControlValues {
     io.read(i).data1 := rf(io.read(i).rs1)
     io.read(i).data2 := rf(io.read(i).rs2)
 
-    when (io.commit.valid && io.commit.bits(i).wb === WB.REG) {
-      rf(io.commit.bits(i).rd) := io.commit.bits(i).data
+    when (io.write(i).en ) {
+      rf(io.write(i).rd) := io.write(i).data
     }
   }
 

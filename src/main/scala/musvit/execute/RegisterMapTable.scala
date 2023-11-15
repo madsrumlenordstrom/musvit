@@ -14,12 +14,19 @@ class RegisterMapTableReadPort(config: MusvitConfig) extends Bundle {
 
 class RegisterMapTableWritePort(config: MusvitConfig) extends Bundle {
   val rs = Input(UInt(REG_ADDR_WIDTH.W))
-  val robTag = Flipped(Valid(ROBTag(config)))
+  val en = Input(Bool())
+  val robTag = Input(ROBTag(config))
+}
+
+class RegisterMapTableClearPort(config: MusvitConfig) extends Bundle {
+  val rs = Input(UInt(REG_ADDR_WIDTH.W))
+  val clear = Input(Bool())
 }
 
 class RegisterMapTableIO(config: MusvitConfig) extends Bundle {
   val read = Vec(config.fetchWidth, new RegisterMapTableReadPort(config))
   val write = Vec(config.fetchWidth, new RegisterMapTableWritePort(config))
+  val clear = Vec(config.fetchWidth, new RegisterMapTableClearPort(config))
   val flush = Input(Bool())
 }
 
@@ -29,8 +36,15 @@ class RegisterMapTable(config: MusvitConfig) extends Module {
   val regMap = RegInit(0.U.asTypeOf(Vec(NUM_OF_REGS, Valid(ROBTag(config)))))
 
   for (i <- 0 until config.fetchWidth) {
+    // Read
     io.read(i).robTag1 := regMap(io.read(i).rs1)
     io.read(i).robTag2 := regMap(io.read(i).rs2)
+
+    // Write
+    when (io.write(i).en) { regMap(io.write(i).rs).bits := io.write(i).robTag }
+
+    // Clear valid bit (used for committing)
+    when (io.clear(i).clear) { regMap(io.clear(i).rs).valid := false.B }
   }
 
   // Mark all as invalid on flush
