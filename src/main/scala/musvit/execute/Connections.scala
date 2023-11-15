@@ -54,12 +54,6 @@ class CommitBus(config: MusvitConfig) extends Bundle with ControlValues {
   val wb      = UInt(WB.X.getWidth.W)   // Writeback types
 }
 
-class ReorderBufferIssuePort(config: MusvitConfig) extends Bundle with ControlValues {
-  val target  = UInt(ADDR_WIDTH.W)      // PC target for branches and jumps
-  val rd      = UInt(REG_ADDR_WIDTH.W)  // Destination register
-  val wb      = UInt(WB.X.getWidth.W)   // Writeback types
-}
-
 object CommitBus {
   def apply(config: MusvitConfig): CommitBus = {
     new CommitBus(config)
