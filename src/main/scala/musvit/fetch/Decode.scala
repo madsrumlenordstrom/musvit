@@ -2,16 +2,18 @@ package musvit.fetch
 
 import chisel3._
 import chisel3.util._
-import chisel3.util.experimental.decode.TruthTable
+import chisel3.util.experimental.decode._
 
 import musvit.MusvitConfig
-import musvit.common.ControlValues
-import utility.Constants._
 import musvit.common.RV32I
 import musvit.common.RV32M
+import musvit.common.ControlValues
+import musvit.common.ControlSignals
+import utility.Constants._
 
 class DecodeIO(config: MusvitConfig) extends Bundle {
   val inst = Input(UInt(INST_WIDTH.W))
+  val ctrl = Output(new ControlSignals())
 }
 
 class Decode(config: MusvitConfig) extends Module with RV32I with RV32M with ControlValues {
@@ -78,4 +80,24 @@ class Decode(config: MusvitConfig) extends Module with RV32I with RV32M with Con
     ).map({case (k, v) => k -> v.reduce(_ ## _)}),
     defaultCtrl.reduce(_ ## _)
   )
+
+  val ctrl = Wire(new ControlSignals())
+  val controlWord = decoder(minimizer = QMCMinimizer, input = io.inst, truthTable = table)
+  val controlWordWidth = controlWord.getWidth
+  var ctrlOffset = 0
+  var signals = Array[UInt]()
+  for (i <- 0 until defaultCtrl.length) {
+    signals = signals :+ controlWord(controlWordWidth - ctrlOffset - 1, controlWordWidth - ctrlOffset - defaultCtrl(i).getWidth)
+    ctrlOffset += defaultCtrl(i).getWidth
+  }
+
+  ctrl.valid    := signals(0)
+  ctrl.fu       := signals(1)
+  ctrl.op       := signals(2)
+  ctrl.op1      := signals(3)
+  ctrl.op2      := signals(4)
+  ctrl.immType  := signals(5)
+  ctrl.wb       := signals(6)
+
+  io.ctrl := ctrl
 }
