@@ -42,13 +42,14 @@ class FunctionalUnitTester extends AnyFlatSpec with ChiselScalatestTester with C
     )
   }
 
-  def issueBus(dut: ReservationStation, op: Int, src1: IssueSource, src2: IssueSource, robTag: Int, imm: Int = 0): IssueBus = {
+  def issueBus(dut: ReservationStation, op: Int, src1: IssueSource, src2: IssueSource, robTag: Int, imm: Int = 0, pc: Int = 0): IssueBus = {
     chiselTypeOf(dut.rs.ib.head).Lit(
       _.op -> intToUInt(op),
       _.src1 -> src1,
       _.src2 -> src2,
       _.robTag -> intToUInt(robTag),
       _.imm -> intToUInt(imm),
+      _.pc -> intToUInt(pc),
     )
   }
 
@@ -59,6 +60,7 @@ class FunctionalUnitTester extends AnyFlatSpec with ChiselScalatestTester with C
       src2 = getRandomIssueSource(dut),
       robTag = Random.nextInt(bitWidthToUIntMax(dut.rs.ib.head.robTag.getWidth).toInt),
       imm = Random.nextInt(),
+      pc = Random.nextInt(),
     )
   }
 
@@ -74,10 +76,10 @@ class FunctionalUnitTester extends AnyFlatSpec with ChiselScalatestTester with C
     }
   }
 
-  def issueData(dut: ReservationStation, op: Int, data1: Int, data2: Int, robTag: Int = dummyTag, imm: Int = 0): Unit = {
+  def issueData(dut: ReservationStation, op: Int, data1: Int, data2: Int, robTag: Int = dummyTag, imm: Int = 0, pc: Int = 0): Unit = {
     val src1 = issueSource(dut, data1, true, dummyTag)
     val src2 = issueSource(dut, data2, true, dummyTag)
-    issue(dut, issueBus(dut, op, src1, src2, robTag, imm), Random.nextInt(config.fetchWidth))
+    issue(dut, issueBus(dut, op, src1, src2, robTag, imm, pc), Random.nextInt(config.fetchWidth))
   }
 
   def writeCDB(dut: ReservationStation, tag: Int, data: Int, cdbIdx: Int = 0): Unit = {
@@ -92,21 +94,22 @@ class FunctionalUnitTester extends AnyFlatSpec with ChiselScalatestTester with C
     }
   }
 
-  def readCDB(dut: FunctionalUnit, expected: Int, robTag: Int): Unit = {
+  def readCDB(dut: FunctionalUnit, expected: Int, robTag: Int, target: Int): Unit = {
     dut.fu.result.ready.poke(true.B)
     while (!dut.fu.result.valid.peekBoolean()) {
       step(dut.clock, 1)
     }
     dut.fu.result.bits.data.expect(intToUInt(expected))
     dut.fu.result.bits.robTag.expect(intToUInt(robTag))
+    dut.fu.result.bits.target.expect(intToUInt(target))
   }
 
-  def issueExpect(dut: FunctionalUnit, op: Int, data1: Int, data2: Int, robTag: Int = Random.nextInt(config.robEntries), imm: Int = 0, expected: Int): Unit = {
-    issueData(dut, op, data1, data2, robTag, imm)
-    readCDB(dut, expected, robTag)
+  def issueExpect(dut: FunctionalUnit, op: Int, data1: Int, data2: Int, robTag: Int = Random.nextInt(config.robEntries), imm: Int = 0, pc: Int = 0, expected: Int, target: Int): Unit = {
+    issueData(dut, op, data1, data2, robTag, imm, pc)
+    readCDB(dut, expected, robTag, target)
   }
 
-  def issueExpectFromFunction(dut: FunctionalUnit, op: Int, data1: Int, data2: Int, robTag: Int = Random.nextInt(config.robEntries), imm: Int = 0, func: (Int, Int) => Int): Unit = {
-    issueExpect(dut, op, data1, data2, robTag, imm, func(data1, data2))
+  def issueExpectFromFunction(dut: FunctionalUnit, op: Int, data1: Int, data2: Int, robTag: Int = Random.nextInt(config.robEntries), imm: Int = 0, pc: Int = 0, func: (Int, Int) => Int, target: Int): Unit = {
+    issueExpect(dut, op, data1, data2, robTag, imm, pc, func(data1, data2), target)
   }
 }

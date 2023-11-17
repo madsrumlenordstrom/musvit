@@ -14,6 +14,7 @@ class FunctionalUnitIO(config: MusvitConfig) extends Bundle {
 class FunctionalUnit(config: MusvitConfig) extends ReservationStation(config) with ControlValues {
   val fu = IO(new FunctionalUnitIO(config))
   fu.result.bits.robTag := rsReg.robTag
+  fu.result.bits.target := 0.U // Default value for FUs that dont generate target
 
   val op    = rsReg.op
   val data1 = rsReg.src1.data.bits

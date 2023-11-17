@@ -45,7 +45,7 @@ class ReservationStationTester extends FunctionalUnitTester {
         // Check output
         val src1 = issueSource(dut, expected1, true, data.src1.robTag.litValue.toInt)
         val src2 = issueSource(dut, expected2, true, data.src2.robTag.litValue.toInt)
-        readRS(issueBus(dut, data.op.litValue.toInt, src1, src2, data.robTag.litValue.toInt, data.imm.litValue.toInt))
+        readRS(issueBus(dut, data.op.litValue.toInt, src1, src2, data.robTag.litValue.toInt, data.imm.litValue.toInt, data.pc.litValue.toInt))
 
       }
       println("Total steps was " + steps)

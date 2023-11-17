@@ -50,7 +50,7 @@ class ALUTester extends FunctionalUnitTester {
         )
 
         def randomIssueExpectFromFunction(dut: FunctionalUnit, op: Int, func: (Int, Int) => Int): Unit = {
-          issueExpectFromFunction(dut, op, Random.nextInt(), Random.nextInt(), func = func)
+          issueExpectFromFunction(dut, op, Random.nextInt(), Random.nextInt(), func = func, target = 0)
         }
 
         def randomTest(): Unit = {
@@ -74,16 +74,16 @@ class ALUTester extends FunctionalUnitTester {
           val edgeVals = Seq(1, -1)
           for (i <- 0 until 2) {
             for (j <- 0 until 2) {
-              issueExpectFromFunction(dut, ALU.ADD.value.toInt, edgeVals(i), edgeVals(j), func = add)
-              issueExpectFromFunction(dut, ALU.SUB.value.toInt, edgeVals(i), edgeVals(j), func = sub)
-              issueExpectFromFunction(dut, ALU.SLL.value.toInt, edgeVals(i), edgeVals(j), func = sll)
-              issueExpectFromFunction(dut, ALU.SLT.value.toInt, edgeVals(i), edgeVals(j), func = slt)
-              issueExpectFromFunction(dut, ALU.SLTU.value.toInt, edgeVals(i), edgeVals(j), func = sltu)
-              issueExpectFromFunction(dut, ALU.XOR.value.toInt, edgeVals(i), edgeVals(j), func = xor)
-              issueExpectFromFunction(dut, ALU.SRL.value.toInt, edgeVals(i), edgeVals(j), func = srl)
-              issueExpectFromFunction(dut, ALU.SRA.value.toInt, edgeVals(i), edgeVals(j), func = sra)
-              issueExpectFromFunction(dut, ALU.OR.value.toInt, edgeVals(i), edgeVals(j), func = or)
-              issueExpectFromFunction(dut, ALU.AND.value.toInt, edgeVals(i), edgeVals(j), func = and)
+              issueExpectFromFunction(dut, ALU.ADD.value.toInt, edgeVals(i), edgeVals(j), func = add, target = 0)
+              issueExpectFromFunction(dut, ALU.SUB.value.toInt, edgeVals(i), edgeVals(j), func = sub, target = 0)
+              issueExpectFromFunction(dut, ALU.SLL.value.toInt, edgeVals(i), edgeVals(j), func = sll, target = 0)
+              issueExpectFromFunction(dut, ALU.SLT.value.toInt, edgeVals(i), edgeVals(j), func = slt, target = 0)
+              issueExpectFromFunction(dut, ALU.SLTU.value.toInt, edgeVals(i), edgeVals(j), func = sltu, target = 0)
+              issueExpectFromFunction(dut, ALU.XOR.value.toInt, edgeVals(i), edgeVals(j), func = xor, target = 0)
+              issueExpectFromFunction(dut, ALU.SRL.value.toInt, edgeVals(i), edgeVals(j), func = srl, target = 0)
+              issueExpectFromFunction(dut, ALU.SRA.value.toInt, edgeVals(i), edgeVals(j), func = sra, target = 0)
+              issueExpectFromFunction(dut, ALU.OR.value.toInt, edgeVals(i), edgeVals(j), func = or, target = 0)
+              issueExpectFromFunction(dut, ALU.AND.value.toInt, edgeVals(i), edgeVals(j), func = and, target = 0)
             }
           }
         }

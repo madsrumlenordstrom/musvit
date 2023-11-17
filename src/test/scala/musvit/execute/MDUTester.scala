@@ -30,10 +30,10 @@ class MultiplierTester extends FunctionalUnitTester {
         def randomTest(): Unit = {
           println("Testing with random input")
           for (i <- 0 until iterations) {
-            issueExpectFromFunction(dut, MDU.MUL.value.toInt, Random.nextInt(), Random.nextInt(), func = mul)
-            issueExpectFromFunction(dut, MDU.MULH.value.toInt, Random.nextInt(), Random.nextInt(), func = mulh)
-            issueExpectFromFunction(dut, MDU.MULHSU.value.toInt, Random.nextInt(), Random.nextInt(), func = mulhsu)
-            issueExpectFromFunction(dut, MDU.MULHU.value.toInt, Random.nextInt(), Random.nextInt(), func = mulhu)
+            issueExpectFromFunction(dut, MDU.MUL.value.toInt, Random.nextInt(), Random.nextInt(), func = mul, target = 0)
+            issueExpectFromFunction(dut, MDU.MULH.value.toInt, Random.nextInt(), Random.nextInt(), func = mulh, target = 0)
+            issueExpectFromFunction(dut, MDU.MULHSU.value.toInt, Random.nextInt(), Random.nextInt(), func = mulhsu, target = 0)
+            issueExpectFromFunction(dut, MDU.MULHU.value.toInt, Random.nextInt(), Random.nextInt(), func = mulhu, target = 0)
           }
         }
 
@@ -42,10 +42,10 @@ class MultiplierTester extends FunctionalUnitTester {
           val edgeVals = Seq(1, -1)
           for (i <- 0 until 2) {
             for (j <- 0 until 2) {
-              issueExpectFromFunction(dut, MDU.MUL.value.toInt, edgeVals(i), edgeVals(j), func = mul)
-              issueExpectFromFunction(dut, MDU.MULH.value.toInt, edgeVals(i), edgeVals(j), func = mulh)
-              issueExpectFromFunction(dut, MDU.MULHSU.value.toInt, edgeVals(i), edgeVals(j), func = mulhsu)
-              issueExpectFromFunction(dut, MDU.MULHU.value.toInt, edgeVals(i), edgeVals(j), func = mulhu)
+              issueExpectFromFunction(dut, MDU.MUL.value.toInt, edgeVals(i), edgeVals(j), func = mul, target = 0)
+              issueExpectFromFunction(dut, MDU.MULH.value.toInt, edgeVals(i), edgeVals(j), func = mulh, target = 0)
+              issueExpectFromFunction(dut, MDU.MULHSU.value.toInt, edgeVals(i), edgeVals(j), func = mulhsu, target = 0)
+              issueExpectFromFunction(dut, MDU.MULHU.value.toInt, edgeVals(i), edgeVals(j), func = mulhu, target = 0)
             }
           }
         }
@@ -75,10 +75,10 @@ class DividerTester extends FunctionalUnitTester {
         def randomTest(): Unit = {
           println("Testing with random input")
           for (i <- 0 until iterations) {
-            issueExpectFromFunction(dut, MDU.DIV.value.toInt, Random.nextInt(), Random.nextInt(), func = div)
-            issueExpectFromFunction(dut, MDU.DIVU.value.toInt, Random.nextInt(), Random.nextInt(), func = divu)
-            issueExpectFromFunction(dut, MDU.REM.value.toInt, Random.nextInt(), Random.nextInt(), func = rem)
-            issueExpectFromFunction(dut, MDU.REMU.value.toInt, Random.nextInt(), Random.nextInt(), func = remu)
+            issueExpectFromFunction(dut, MDU.DIV.value.toInt, Random.nextInt(), Random.nextInt(), func = div, target = 0)
+            issueExpectFromFunction(dut, MDU.DIVU.value.toInt, Random.nextInt(), Random.nextInt(), func = divu, target = 0)
+            issueExpectFromFunction(dut, MDU.REM.value.toInt, Random.nextInt(), Random.nextInt(), func = rem, target = 0)
+            issueExpectFromFunction(dut, MDU.REMU.value.toInt, Random.nextInt(), Random.nextInt(), func = remu, target = 0)
           }
         }
 
@@ -87,10 +87,10 @@ class DividerTester extends FunctionalUnitTester {
           val edgeVals = Seq(1, -1)
           for (i <- 0 until 2) {
             for (j <- 0 until 2) {
-              issueExpectFromFunction(dut, MDU.DIV.value.toInt, edgeVals(i), edgeVals(j), func = div)
-              issueExpectFromFunction(dut, MDU.DIVU.value.toInt, edgeVals(i), edgeVals(j), func = divu)
-              issueExpectFromFunction(dut, MDU.REM.value.toInt, edgeVals(i), edgeVals(j), func = rem)
-              issueExpectFromFunction(dut, MDU.REMU.value.toInt, edgeVals(i), edgeVals(j), func = remu)
+              issueExpectFromFunction(dut, MDU.DIV.value.toInt, edgeVals(i), edgeVals(j), func = div, target = 0)
+              issueExpectFromFunction(dut, MDU.DIVU.value.toInt, edgeVals(i), edgeVals(j), func = divu, target = 0)
+              issueExpectFromFunction(dut, MDU.REM.value.toInt, edgeVals(i), edgeVals(j), func = rem, target = 0)
+              issueExpectFromFunction(dut, MDU.REMU.value.toInt, edgeVals(i), edgeVals(j), func = remu, target = 0)
             }
           }
         }
