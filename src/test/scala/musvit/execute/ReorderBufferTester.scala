@@ -8,14 +8,15 @@ import scala.util.Random
 import scala.collection.mutable.Queue
 
 import musvit.MusvitConfig
+import musvit.common.ControlValues
 import utility.Functions._
 import utility.Constants._
 import utility.TestingFunctions._
 
-class ReorderBufferTester extends AnyFlatSpec with ChiselScalatestTester {
+class ReorderBufferTester extends AnyFlatSpec with ChiselScalatestTester with ControlValues {
   val config = MusvitConfig(
     fetchWidth = 2,
-    robEntries = 32,
+    robEntries = 8,
   )
 
   "ReorderBuffer" should "pass" in {
@@ -24,6 +25,7 @@ class ReorderBufferTester extends AnyFlatSpec with ChiselScalatestTester {
       dut.io.flush.poke(false.B)
 
       val issues = Queue[Seq[CommitBus]]()
+      val writeVals = Seq.fill(config.robEntries)(Random.nextInt())
 
       def reorderBufferEntry(data: Int, target: Int, rd: Int, wb: Int): CommitBus = {
         chiselTypeOf(dut.io.issue.bits.head).Lit(
@@ -66,45 +68,63 @@ class ReorderBufferTester extends AnyFlatSpec with ChiselScalatestTester {
         dut.io.cdb(0).bits.tag.poke(intToUInt(robTag))
         dut.io.cdb(0).bits.data.poke(intToUInt(data))
         dut.clock.step(1)
+        dut.io.cdb(0).valid.poke(false.B)
       }
 
       // Issue      
       while (dut.io.issue.ready.peekBoolean()) {
-        val data = Seq.fill(config.fetchWidth)(reorderBufferEntry(Random.nextInt(), Random.nextInt(), Random.nextInt(bitWidthToUIntMax(dut.io.issue.bits.head.rd.getWidth).toInt), Random.nextInt(bitWidthToUIntMax(dut.io.issue.bits.head.wb.getWidth).toInt)))
+        val data = Seq.fill(config.fetchWidth)(reorderBufferEntry(Random.nextInt(), Random.nextInt(), Random.nextInt(bitWidthToUIntMax(dut.io.issue.bits.head.rd.getWidth).toInt + 1), Random.nextInt(bitWidthToUIntMax(dut.io.issue.bits.head.wb.getWidth).toInt + 1)))
         issue(data)
         issues.enqueue(data)
       }
 
-      // Commit
-      while (dut.io.commit.valid.peekBoolean()) {
-        val expected = issues.dequeue().toSeq
-        commit(expected)
-      }
-
-      // Issue
-      while (dut.io.issue.ready.peekBoolean()) {
-        val data = Seq.fill(config.fetchWidth)(reorderBufferEntry(Random.nextInt(), Random.nextInt(), Random.nextInt(bitWidthToUIntMax(dut.io.issue.bits.head.rd.getWidth).toInt), Random.nextInt(bitWidthToUIntMax(dut.io.issue.bits.head.wb.getWidth).toInt)))
-        issue(data)
-        issues.enqueue(data)
-      }
+      dut.io.issue.ready.expect(false.B)
       
       // Read operands
       for (i <- 0 until config.robEntries) {
-        read(i, issues(i / config.fetchWidth)(i % config.fetchWidth).data.litValue.toInt, valid = false)
+        val issue = issues(i / config.fetchWidth)(i % config.fetchWidth)
+        val data = if (issue.wb.litValue.toInt == WB.JMP.value.toInt) issue.target else issue.data
+        val valid = if (issue.wb.litValue.toInt == WB.JMP.value.toInt) true else false
+        read(i, data.litValue.toInt, valid = valid)
         dut.clock.step(1)
       }
-
+      
       // Write operands
       for (i <- 0 until config.robEntries) {
-        val writeVal = Random.nextInt()
-        write(i, writeVal)
-        read(i, writeVal, true)
+        val issue = issues(i / config.fetchWidth)(i % config.fetchWidth)
+        val data = if (issue.wb.litValue.toInt == WB.JMP.value.toInt) issue.target.litValue.toInt else writeVals(i)
+        write(i, writeVals(i))
+        read(i, data, true)
         dut.clock.step(1)
+      }
+      
+      dut.io.commit.valid.expect(true.B)
+
+      // Commit
+      for (j <- 0 until issues.length) {
+        val issue = issues.dequeue().toSeq
+        val expected = chiselTypeOf(dut.io.commit.bits).zipWithIndex.map{
+          case (cb, i) =>
+            cb.Lit(
+              _.data -> intToUInt(writeVals((config.fetchWidth * j) + i)),
+              _.rd -> issue(i).rd,
+              _.target -> issue(i).target,
+              _.wb -> issue(i).wb,
+            )
+        }
+        commit(expected)
+      }
+
+      dut.io.commit.valid.expect(false.B)
+
+      // Issue      
+      while (dut.io.issue.ready.peekBoolean()) {
+        val data = Seq.fill(config.fetchWidth)(reorderBufferEntry(Random.nextInt(), Random.nextInt(), Random.nextInt(bitWidthToUIntMax(dut.io.issue.bits.head.rd.getWidth).toInt + 1), Random.nextInt(bitWidthToUIntMax(dut.io.issue.bits.head.wb.getWidth).toInt + 1)))
+        issue(data)
+        issues.enqueue(data)
       }
 
       // Flush
-      dut.io.commit.valid.expect(true.B)
-      dut.io.issue.ready.expect(false.B)
       dut.io.flush.poke(true.B)
       dut.clock.step(1)
       dut.io.commit.valid.expect(false.B)

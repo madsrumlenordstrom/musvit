@@ -41,7 +41,10 @@ class RegisterMapTable(config: MusvitConfig) extends Module {
     io.read(i).robTag2 := regMap(io.read(i).rs2)
 
     // Write
-    when (io.write(i).en) { regMap(io.write(i).rs).bits := io.write(i).robTag }
+    when (io.write(i).en) {
+      regMap(io.write(i).rs).bits := io.write(i).robTag
+      regMap(io.write(i).rs).valid := true.B
+    }
 
     // Clear valid bit (used for committing)
     when (io.clear(i).clear) { regMap(io.clear(i).rs).valid := false.B }

@@ -88,6 +88,7 @@ trait ControlValues {
     /* JMP writeback takes whatever is in ROB data and set the PC the value.
     PC+4 which is contained in ROB target is written to RF */
 
+    def REG_OR_JMP: BitPat = BitPat("b?1")
     def X:    BitPat = BitPat("b??")
   }
 
