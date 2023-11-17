@@ -30,7 +30,7 @@ class FunctionalUnitTester extends AnyFlatSpec with ChiselScalatestTester with C
     chiselTypeOf(dut.rs.ib.head.src1).Lit(
       _.data.bits -> intToUInt(data),
       _.data.valid -> valid.B,
-      _.tag -> intToUInt(tag),
+      _.robTag -> intToUInt(tag),
     )
   }
 
@@ -82,12 +82,12 @@ class FunctionalUnitTester extends AnyFlatSpec with ChiselScalatestTester with C
 
   def writeCDB(dut: ReservationStation, tag: Int, data: Int, cdbIdx: Int = 0): Unit = {
     dut.rs.cdb(cdbIdx).valid.poke(true.B)
-    dut.rs.cdb(cdbIdx).bits.tag.poke(tag.U)
+    dut.rs.cdb(cdbIdx).bits.robTag.poke(tag.U)
     dut.rs.cdb(cdbIdx).bits.data.poke(intToUInt(data))
     step(dut.clock, 1)
     dut.rs.cdb(cdbIdx).valid.poke(false.B)
     if (resetAfterPokes) {
-      dut.rs.cdb(cdbIdx).bits.tag.poke(dummyTag.U)
+      dut.rs.cdb(cdbIdx).bits.robTag.poke(dummyTag.U)
       dut.rs.cdb(cdbIdx).bits.data.poke(0.U)
     }
   }
@@ -98,7 +98,7 @@ class FunctionalUnitTester extends AnyFlatSpec with ChiselScalatestTester with C
       step(dut.clock, 1)
     }
     dut.fu.result.bits.data.expect(intToUInt(expected))
-    dut.fu.result.bits.tag.expect(intToUInt(robTag))
+    dut.fu.result.bits.robTag.expect(intToUInt(robTag))
   }
 
   def issueExpect(dut: FunctionalUnit, op: Int, data1: Int, data2: Int, robTag: Int = Random.nextInt(config.robEntries), imm: Int = 0, expected: Int): Unit = {

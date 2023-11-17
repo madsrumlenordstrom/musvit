@@ -65,7 +65,7 @@ class ReorderBufferTester extends AnyFlatSpec with ChiselScalatestTester with Co
 
       def write(robTag: Int, data: Int): Unit = {
         dut.io.cdb(0).valid.poke(true.B)
-        dut.io.cdb(0).bits.tag.poke(intToUInt(robTag))
+        dut.io.cdb(0).bits.robTag.poke(intToUInt(robTag))
         dut.io.cdb(0).bits.data.poke(intToUInt(data))
         dut.clock.step(1)
         dut.io.cdb(0).valid.poke(false.B)

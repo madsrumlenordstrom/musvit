@@ -9,28 +9,25 @@ import musvit.common.ControlValues
 
 object ROBTag {
   def apply(config: MusvitConfig): UInt = {
-    UInt(log2Up(config.robEntries).W) // TODO: figure out width
+    UInt(log2Up(config.robEntries).W)
   }
 }
 
-class ROBTagged[T <: Data](gen: T, config: MusvitConfig) extends Bundle {
-  val tag = ROBTag(config)
-  val data = gen
-}
-
-object ROBTagged {
-  def apply[T <: Data](gen: T, config: MusvitConfig): ROBTagged[T] = new ROBTagged(gen, config)
+class CommonDataBus(config: MusvitConfig) extends Bundle {
+  val data = UInt(WORD_WIDTH.W)   // Value to write to RF or Mem
+  val target = UInt(ADDR_WIDTH.W) // PC target for branches and jumps
+  val robTag = ROBTag(config)     // Index in ROB
 }
 
 object CommonDataBus {
   def apply(config: MusvitConfig) = {
-    ROBTagged(UInt(WORD_WIDTH.W), config)
+    new CommonDataBus(config)
   }
 }
 
 class IssueSource(config: MusvitConfig) extends Bundle {
   val data = Valid(UInt(WORD_WIDTH.W))
-  val tag = ROBTag(config)
+  val robTag = ROBTag(config)
 }
 
 class IssueBus(config: MusvitConfig) extends Bundle with ControlValues {
@@ -39,6 +36,7 @@ class IssueBus(config: MusvitConfig) extends Bundle with ControlValues {
   val src2 = new IssueSource(config)
   val robTag = ROBTag(config)
   val imm = UInt(WORD_WIDTH.W)
+  val pc = UInt(ADDR_WIDTH.W)
 }
 
 object IssueBus {

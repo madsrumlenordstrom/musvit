@@ -36,7 +36,7 @@ class OperandSupplierTester extends AnyFlatSpec with ChiselScalatestTester with 
 
       def issueSource(robTag: Int, data: Int, valid: Boolean): IssueSource = {
         chiselTypeOf(dut.io.read.head.src1).Lit(
-          _.tag -> intToUInt(robTag),
+          _.robTag -> intToUInt(robTag),
           _.data.bits -> intToUInt(data),
           _.data.valid -> valid.B
         )
@@ -56,19 +56,19 @@ class OperandSupplierTester extends AnyFlatSpec with ChiselScalatestTester with 
         if (dut.io.read(0).src1.data.valid.peekBoolean()) {
           dut.io.read(0).src1.data.bits.expect(expect.data.bits)
         } else {
-          dut.io.read(0).src1.tag.expect(expect.tag)
+          dut.io.read(0).src1.robTag.expect(expect.robTag)
         }
         dut.io.read(0).rs2.poke(intToUInt(rs))
         if (dut.io.read(0).src2.data.valid.peekBoolean()) {
           dut.io.read(0).src2.data.bits.expect(expect.data.bits)
         } else {
-          dut.io.read(0).src2.tag.expect(expect.tag)
+          dut.io.read(0).src2.robTag.expect(expect.robTag)
         }
       }
 
       def write(robTag: Int, data: Int): Unit = {
         dut.io.cdb(0).valid.poke(true.B)
-        dut.io.cdb(0).bits.tag.poke(intToUInt(robTag))
+        dut.io.cdb(0).bits.robTag.poke(intToUInt(robTag))
         dut.io.cdb(0).bits.data.poke(intToUInt(data))
         dut.clock.step(1)
       }

@@ -13,12 +13,13 @@ class FunctionalUnitIO(config: MusvitConfig) extends Bundle {
 
 class FunctionalUnit(config: MusvitConfig) extends ReservationStation(config) with ControlValues {
   val fu = IO(new FunctionalUnitIO(config))
-  fu.result.bits.tag := rsReg.robTag
+  fu.result.bits.robTag := rsReg.robTag
 
   val op    = rsReg.op
   val data1 = rsReg.src1.data.bits
   val data2 = rsReg.src2.data.bits
   val imm   = rsReg.imm
+  val pc    = rsReg.pc
 
   // Mark operation as done
   when (fu.result.fire) {

@@ -86,9 +86,9 @@ class ReorderBuffer(config: MusvitConfig) extends Module with ControlValues {
 
   // Write results from CDB
   for (i <- 0 until io.cdb.length) {
-    when(io.cdb(i).valid && !robTagToReadyEntry(io.cdb(i).bits.tag)) {
-      robTagToRobEntry(io.cdb(i).bits.tag).data <> io.cdb(i).bits.data
-      robTagToReadyEntry(io.cdb(i).bits.tag) := true.B
+    when(io.cdb(i).valid && !robTagToReadyEntry(io.cdb(i).bits.robTag)) {
+      robTagToRobEntry(io.cdb(i).bits.robTag).data <> io.cdb(i).bits.data
+      robTagToReadyEntry(io.cdb(i).bits.robTag) := true.B
     }
   }
 }

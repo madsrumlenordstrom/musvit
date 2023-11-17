@@ -73,7 +73,7 @@ class OperandSupplier(config: MusvitConfig) extends Module with ControlValues {
       validateData(rf.io.read(i).data1),
       Seq((regMap.io.read(i).robTag1.valid) -> rob.io.read(i).data1) ++
       Seq.tabulate(io.cdb.length)(j => // CDB bypass
-        ((regMap.io.read(i).robTag1.bits === io.cdb(j).bits.tag) &&
+        ((regMap.io.read(i).robTag1.bits === io.cdb(j).bits.robTag) &&
         io.cdb(j).valid &&
         regMap.io.read(i).robTag1.valid)
         -> validateData(io.cdb(j).bits.data)
@@ -85,7 +85,7 @@ class OperandSupplier(config: MusvitConfig) extends Module with ControlValues {
       validateData(rf.io.read(i).data2),
       Seq((regMap.io.read(i).robTag2.valid) -> rob.io.read(i).data2) ++
       Seq.tabulate(io.cdb.length)(j => // CDB bypass
-        ((regMap.io.read(i).robTag2.bits === io.cdb(j).bits.tag) &&
+        ((regMap.io.read(i).robTag2.bits === io.cdb(j).bits.robTag) &&
           io.cdb(j).valid &&
           regMap.io.read(i).robTag2.valid) ->
           validateData(io.cdb(j).bits.data)
@@ -93,8 +93,8 @@ class OperandSupplier(config: MusvitConfig) extends Module with ControlValues {
     )
 
     // Set default ROB tags
-    io.read(i).src1.tag := regMap.io.read(i).robTag1.bits
-    io.read(i).src2.tag := regMap.io.read(i).robTag2.bits
+    io.read(i).src1.robTag := regMap.io.read(i).robTag1.bits
+    io.read(i).src2.robTag := regMap.io.read(i).robTag2.bits
 
     // Check for conflicting registers and rename
     for (j <- 0 until i) {
@@ -104,7 +104,7 @@ class OperandSupplier(config: MusvitConfig) extends Module with ControlValues {
           (io.issue.bits(j).wb === WB.REG_OR_JMP)
       ) {
         io.read(i).src1.data.valid := false.B
-        io.read(i).src1.tag := regMap.io.read(j).robTag1.bits
+        io.read(i).src1.robTag := regMap.io.read(j).robTag1.bits
       }
 
       when(
@@ -113,7 +113,7 @@ class OperandSupplier(config: MusvitConfig) extends Module with ControlValues {
           (io.issue.bits(j).wb === WB.REG_OR_JMP)
       ) {
         io.read(i).src2.data.valid := false.B
-        io.read(i).src2.tag := regMap.io.read(j).robTag2.bits
+        io.read(i).src2.robTag := regMap.io.read(j).robTag2.bits
       }
     }
   }

@@ -36,7 +36,7 @@ class ReservationStation(config: MusvitConfig) extends Module {
   def connectCDB(isReg: IssueSource): Unit = {
     // Look for valid data on common data bus
     rs.cdb.zipWithIndex.foreach { case (cdb, i) =>
-      when (!isReg.data.valid && cdb.bits.tag === isReg.tag && cdb.valid) {
+      when (!isReg.data.valid && cdb.bits.robTag === isReg.robTag && cdb.valid) {
         isReg.data.bits := cdb.bits.data
         isReg.data.valid := true.B
       }
