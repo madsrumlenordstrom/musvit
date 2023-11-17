@@ -25,7 +25,21 @@ class ALU (config: MusvitConfig) extends FunctionalUnit(config) {
     (op === ALU.SRA)  -> ((data1.asSInt >> shamt).asUInt),
     (op === ALU.OR)   -> (data1 | data2),
     (op === ALU.AND)  -> (data1 & data2),
+    // Branches
+    (op === ALU.BEQ)  -> (eq),
+    (op === ALU.BNE)  -> (!eq),
+    (op === ALU.BLT)  -> (lt), // Same as SLT (maybe remove)
+    (op === ALU.BGE)  -> (!lt || eq),
+    (op === ALU.BLTU) -> (ltu), // Same as SLTU (maybe remove)
+    (op === ALU.BGEU) -> (!ltu || eq),
+    // Jumps
+    (op === ALU.JMP)  -> (pc + 4.U),
   ))
 
+  // Calculate jump and branch target
+  fu.result.bits.target := MuxCase(pc + imm, Seq(
+    (op === ALU.JALR) -> (data1 + imm),
+  ))
+    
   fu.result.valid := dataValid && busyReg
 }

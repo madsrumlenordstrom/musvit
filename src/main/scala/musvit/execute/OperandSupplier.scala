@@ -42,7 +42,7 @@ class OperandSupplier(config: MusvitConfig) extends Module with ControlValues {
     regMap.io.read(i).rs2 := io.read(i).rs2
     regMap.io.write(i).rs := io.issue.bits(i).rd
     regMap.io.write(i).en := io.issue.fire && io.issue.bits(i).wb === WB.REG_OR_JMP
-    regMap.io.write(i).robTag := rob.io.freeTags(i)  //0.U// io.read(i).src1.tag TODO
+    regMap.io.write(i).robTag := rob.io.freeTags(i)
     regMap.io.clear(i).rs := rob.io.commit.bits(i).rd
     regMap.io.clear(i).clear := rob.io.commit.fire && rob.io.commit.bits(i).wb === WB.REG_OR_JMP
 
@@ -54,11 +54,7 @@ class OperandSupplier(config: MusvitConfig) extends Module with ControlValues {
     rf.io.read(i).rs1 := io.read(i).rs1
     rf.io.read(i).rs2 := io.read(i).rs2
     rf.io.write(i).rd := rob.io.commit.bits(i).rd
-    rf.io.write(i).data := Mux(
-      rob.io.commit.bits(i).wb === WB.JMP,
-      rob.io.commit.bits(i).target,
-      rob.io.commit.bits(i).data
-    )
+    rf.io.write(i).data := rob.io.commit.bits(i).data
     rf.io.write(i).en := rob.io.commit.fire && rob.io.commit.bits(i).wb === WB.REG_OR_JMP
 
     def validateData[T <: Data](data: T): Valid[T] = {

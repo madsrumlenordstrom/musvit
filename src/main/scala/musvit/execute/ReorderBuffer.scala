@@ -37,7 +37,7 @@ class ReorderBuffer(config: MusvitConfig) extends Module with ControlValues {
   val do_deq = WireDefault(io.commit.fire)
 
   val rob = Reg(Vec(entries, Vec(config.fetchWidth, CommitBus(config))))
-  val robAddrWidth = ROBTag(config).getWidth - log2Up(config.fetchWidth)
+  val robAddrWidth = ROBTag(config).getWidth - log2Ceil(config.fetchWidth)
   val readyReg = Reg(Vec(entries, Vec(config.fetchWidth, Bool())))
   val dequeueReady = readyReg(deq_ptr.value).reduce(_ && _)
 
@@ -78,16 +78,17 @@ class ReorderBuffer(config: MusvitConfig) extends Module with ControlValues {
 
   // Read operands
   for (i <- 0 until io.read.length) {
-    io.read(i).data1.bits   := Mux(robTagToRobEntry(io.read(i).robTag1).wb === WB.JMP, robTagToRobEntry(io.read(i).robTag1).target, robTagToRobEntry(io.read(i).robTag1).data)
-    io.read(i).data1.valid  := Mux(robTagToRobEntry(io.read(i).robTag1).wb === WB.JMP, true.B, robTagToReadyEntry(io.read(i).robTag1))
-    io.read(i).data2.bits   := Mux(robTagToRobEntry(io.read(i).robTag2).wb === WB.JMP, robTagToRobEntry(io.read(i).robTag2).target, robTagToRobEntry(io.read(i).robTag2).data)
-    io.read(i).data2.valid  := Mux(robTagToRobEntry(io.read(i).robTag2).wb === WB.JMP, true.B, robTagToReadyEntry(io.read(i).robTag2))
+    io.read(i).data1.bits   := robTagToRobEntry(io.read(i).robTag1).data
+    io.read(i).data1.valid  := robTagToReadyEntry(io.read(i).robTag1)
+    io.read(i).data2.bits   := robTagToRobEntry(io.read(i).robTag2).data
+    io.read(i).data2.valid  := robTagToReadyEntry(io.read(i).robTag2)
   }
 
   // Write results from CDB
   for (i <- 0 until io.cdb.length) {
     when(io.cdb(i).valid && !robTagToReadyEntry(io.cdb(i).bits.robTag)) {
       robTagToRobEntry(io.cdb(i).bits.robTag).data <> io.cdb(i).bits.data
+      robTagToRobEntry(io.cdb(i).bits.robTag).target <> io.cdb(i).bits.target
       robTagToReadyEntry(io.cdb(i).bits.robTag) := true.B
     }
   }

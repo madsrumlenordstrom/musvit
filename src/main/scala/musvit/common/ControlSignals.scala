@@ -56,10 +56,16 @@ trait ControlValues {
 
     def BEQ:    BitPat = BitPat("b1011")
     def BNE:    BitPat = BitPat("b1001")
-    def BLT:    BitPat = BitPat("b1100")
+    def BLT:    BitPat = BitPat("b0010") // Same as SLT (on purpose)
     def BGE:    BitPat = BitPat("b1010")
-    def BLTU:   BitPat = BitPat("b1110")
+    def BLTU:   BitPat = BitPat("b0011") // Same as SLTU (on purpose)
     def BGEU:   BitPat = BitPat("b1111")
+
+    def JAL:    BitPat = BitPat("b1110")
+    def JALR:   BitPat = BitPat("b1100")
+
+    // Not opcode but used for identifiying uncondictional jumps
+    def JMP:    BitPat = BitPat("b11?0")
 
     def X:      BitPat = BitPat("b????")
   }
@@ -114,17 +120,19 @@ trait ControlValues {
 
 
   object OP1 {
-    def RS1:  BitPat = BitPat("b0")
-    def PC:   BitPat = BitPat("b1")
+    def RS1:  BitPat = BitPat("b00")
+    def PC:   BitPat = BitPat("b01")
+    def ZERO: BitPat = BitPat("b10")
 
-    def X:    BitPat = BitPat("b?")
+    def X:    BitPat = BitPat("b??")
   }
   
   object OP2 {
-    def RS2:  BitPat = BitPat("b0")
-    def IMM:  BitPat = BitPat("b1")
+    def RS2:  BitPat = BitPat("b00")
+    def IMM:  BitPat = BitPat("b01")
+    def FOUR: BitPat = BitPat("b10")
 
-    def X:    BitPat = BitPat("b?")
+    def X:    BitPat = BitPat("b??")
   }
 }
 

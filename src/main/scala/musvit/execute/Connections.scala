@@ -46,10 +46,11 @@ object IssueBus {
 }
 
 class CommitBus(config: MusvitConfig) extends Bundle with ControlValues {
-  val data    = UInt(WORD_WIDTH.W)      // Value to write to RF or Mem
-  val target  = UInt(ADDR_WIDTH.W)      // PC target for branches and jumps
-  val rd      = UInt(REG_ADDR_WIDTH.W)  // Destination register
-  val wb      = UInt(WB.X.getWidth.W)   // Writeback types
+  val data      = UInt(WORD_WIDTH.W)      // Value to write to RF or Mem
+  val target    = UInt(ADDR_WIDTH.W)      // PC target for branches and jumps
+  val rd        = UInt(REG_ADDR_WIDTH.W)  // Destination register
+  val wb        = UInt(WB.X.getWidth.W)   // Writeback types
+  val branched  = Bool()                  // Indicates if branch was taken
 }
 
 object CommitBus {
