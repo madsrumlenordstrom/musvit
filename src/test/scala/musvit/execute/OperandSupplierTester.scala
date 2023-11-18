@@ -24,13 +24,16 @@ class OperandSupplierTester extends AnyFlatSpec with ChiselScalatestTester with 
       dut.clock.setTimeout(0)
 
       val issues = Queue[Seq[CommitBus]]()
+      val writeData = Seq.fill(config.robEntries)(Random.nextInt())
+      val writeTargets = Seq.fill(config.robEntries)(Random.nextInt())
 
-      def commitBus(data: Int, target: Int, rd: Int, wb: Int): CommitBus = {
+      def commitBus(data: Int, target: Int, rd: Int, wb: Int, branched: Boolean): CommitBus = {
         chiselTypeOf(dut.io.issue.bits.head).Lit(
           _.data -> intToUInt(data),
           _.target -> intToUInt(target),
           _.rd -> intToUInt(rd),
           _.wb -> intToUInt(wb),
+          _.branched -> branched.B
         )
       }
 
@@ -66,16 +69,18 @@ class OperandSupplierTester extends AnyFlatSpec with ChiselScalatestTester with 
         }
       }
 
-      def write(robTag: Int, data: Int): Unit = {
+      def write(robTag: Int, data: Int, target: Int): Unit = {
         dut.io.cdb(0).valid.poke(true.B)
         dut.io.cdb(0).bits.robTag.poke(intToUInt(robTag))
         dut.io.cdb(0).bits.data.poke(intToUInt(data))
+        dut.io.cdb(0).bits.target.poke(intToUInt(target))
         dut.clock.step(1)
+        dut.io.cdb(0).valid.poke(false.B)
       }
 
       // Issue      
       for (i <- 0 until config.robEntries / config.fetchWidth) {
-        val data = Seq.tabulate(config.fetchWidth)(j => commitBus(Random.nextInt(), Random.nextInt(), (config.fetchWidth * i) + j, WB.REG.value.toInt))
+        val data = Seq.tabulate(config.fetchWidth)(j => commitBus(Random.nextInt(), Random.nextInt(), (config.fetchWidth * i) + j, WB.REG.value.toInt, false))
         issue(data)
         issues.enqueue(data)
       }
@@ -88,6 +93,38 @@ class OperandSupplierTester extends AnyFlatSpec with ChiselScalatestTester with 
         read(i, source)
         dut.clock.step(1)
       }
+
+      // Write operands
+      for (i <- 0 until config.robEntries) {
+        val source = issueSource(i, if (i == 0) 0 else writeData(i), true)
+        write(i, writeData(i), writeTargets(i))
+        read(i, source)
+        dut.clock.step(1)
+      }
+
+
+      // Test branch
+      val nonBranched = Seq.fill(config.fetchWidth)(commitBus(0, 0, 0, WB.PC.value.toInt, false))
+      issue(nonBranched)
+      for (i <- 0 until config.fetchWidth) {
+        dut.io.pc.en.expect(false.B)
+        write(i, i % 2, writeTargets(i))
+      }
+      dut.io.pc.en.expect(true.B)
+      dut.io.pc.data.expect(intToUInt(writeTargets(1)))
+      dut.clock.step(1)
+      dut.io.pc.en.expect(false.B)
+
+      val branched = Seq.fill(config.fetchWidth)(commitBus(0, 0, 0, WB.PC.value.toInt, true))
+      issue(branched)
+      for (i <- 0 until config.fetchWidth) {
+        dut.io.pc.en.expect(false.B)
+        write(i, i % 2, writeTargets(i))
+      }
+      dut.io.pc.en.expect(true.B)
+      dut.io.pc.data.expect(intToUInt(writeTargets(0)))
+      dut.clock.step(1)
+      dut.io.pc.en.expect(false.B)
 
       // Write operands
       //for (i <- 0 until config.robEntries) {
