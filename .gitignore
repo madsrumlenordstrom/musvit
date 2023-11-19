@@ -11,3 +11,5 @@ rtl/
 config.mk
 metals.sbt
 random
+.scalafmt.conf
+*.drawio
