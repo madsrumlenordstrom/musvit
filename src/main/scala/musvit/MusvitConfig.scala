@@ -14,9 +14,9 @@ case class MusvitConfig(
     clockFrequency: Int = -1,       // Clock frequency of Musvit
     ramSize: Int = 0x00001000,      // RAM size in bytes
     ramAddr: Long = 0x00001000L,    // Start address of RAM
-    instQueueSize: Int = 8,         // Number of queue entries in instruction queue
-    rsNum: Int = 8,                 // Number of reservation stations
-    lsuNum: Int = 2,                // Number of load store units
+    instQueueEntries: Int = 8,      // Number of queue entries in instruction queue
+    rsNum: Int = 8,                 // Number of reservation stations TODO remove
+    lsuNum: Int = 2,                // Number of load store units     TODO remove
     robEntries: Int = 32            // Number of rows in ROB each row fits <fetchWidth> instructions
     // is robRows a better name?
 )
@@ -27,6 +27,5 @@ object MusvitConfig {
     val default = MusvitConfig(
         fetchWidth = 2,
         romFile = "sw/build/blinky.bin",
-        rsNum = 8,
     )
 }

@@ -4,6 +4,7 @@ import chisel3._
 import chisel3.util._
 
 import utility.Constants._
+import utility.ValidateData
 import musvit.MusvitConfig
 import musvit.common.ControlValues
 import musvit.execute.IssueSource
@@ -86,33 +87,26 @@ class OperandSupplier(config: MusvitConfig) extends Module with ControlValues {
     targets(i).bits.en   := commitValid && branches(i)
     targets(i).valid     := commitValid && branches(i)
 
-    def validateData[T <: Data](data: T): Valid[T] = {
-      val d = Wire(Valid(chiselTypeOf(data)))
-      d.valid := true.B
-      d.bits := data
-      d
-    }
-
     // Read operand 1
     io.read(i).src1.data := MuxCase(
-      validateData(rf.io.read(i).data1),
+      ValidateData(rf.io.read(i).data1),
       Seq.tabulate(io.cdb.length)(j => // CDB bypass
         ((regMap.io.read(i).robTag1.bits === io.cdb(j).bits.robTag) &&
         io.cdb(j).valid &&
         regMap.io.read(i).robTag1.valid)
-        -> validateData(io.cdb(j).bits.data)
+        -> ValidateData(io.cdb(j).bits.data)
       ) ++
       Seq((regMap.io.read(i).robTag1.valid) -> rob.io.read(i).data1)
     )
 
     // Read operand 2
     io.read(i).src2.data := MuxCase(
-      validateData(rf.io.read(i).data2),
+      ValidateData(rf.io.read(i).data2),
       Seq.tabulate(io.cdb.length)(j => // CDB bypass
         ((regMap.io.read(i).robTag2.bits === io.cdb(j).bits.robTag) &&
           io.cdb(j).valid &&
           regMap.io.read(i).robTag2.valid) ->
-          validateData(io.cdb(j).bits.data)
+          ValidateData(io.cdb(j).bits.data)
       ) ++
       Seq((regMap.io.read(i).robTag2.valid) -> rob.io.read(i).data2)
     )

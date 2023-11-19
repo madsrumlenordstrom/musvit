@@ -61,6 +61,24 @@ object Negate {
   }
 }
 
+object DecoupledToValid {
+  def apply[T <: Data](data: DecoupledIO[T]): Valid[T] = {
+    val d = Wire(Valid(chiselTypeOf(data.bits)))
+    d.bits := data.bits
+    d.valid := data.valid
+    d
+  }
+}
+
+object ValidateData {
+  def apply[T <: Data](data: T): Valid[T] = {
+    val d = Wire(Valid(chiselTypeOf(data)))
+    d.valid := true.B
+    d.bits := data
+    d
+  }
+}
+
 object BarrelShifter {
   private trait ShiftType
 
