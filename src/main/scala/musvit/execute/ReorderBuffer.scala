@@ -14,10 +14,15 @@ class ReorderBufferReadPort(config: MusvitConfig) extends Bundle {
   val data2 = Valid(UInt(WORD_WIDTH.W))
 }
 
+class ReorderBufferIssue(config: MusvitConfig) extends Bundle {
+  val commit = Vec(config.fetchWidth, CommitBus(config))
+  val ready = Vec(config.fetchWidth, Bool())
+}
+
 class ReorderBufferIO(config: MusvitConfig) extends Bundle {
   val flush = Input(Bool())
-  val issue = Flipped(Decoupled(Vec(config.fetchWidth, CommitBus(config))))
-  val commit = Decoupled(Vec(config.fetchWidth, CommitBus(config)))
+  val issue = Flipped(Decoupled(Vec(config.fetchWidth, Valid(CommitBus(config)))))
+  val commit = Decoupled(Vec(config.fetchWidth, Valid(CommitBus(config))))
   val read = Vec(config.fetchWidth, new ReorderBufferReadPort(config))
   val cdb = Vec(config.fetchWidth, Flipped(Valid(CommonDataBus(config))))
   val freeTags = Output(Vec(config.fetchWidth, ROBTag(config)))
@@ -36,14 +41,14 @@ class ReorderBuffer(config: MusvitConfig) extends Module with ControlValues {
   val do_enq = WireDefault(io.issue.fire)
   val do_deq = WireDefault(io.commit.fire)
 
-  val rob = Reg(Vec(entries, Vec(config.fetchWidth, CommitBus(config))))
+  val rob = Reg(Vec(entries, Vec(config.fetchWidth, Valid(CommitBus(config)))))
   val robAddrWidth = ROBTag(config).getWidth - log2Ceil(config.fetchWidth)
   val readyReg = Reg(Vec(entries, Vec(config.fetchWidth, Bool())))
   val dequeueReady = readyReg(deq_ptr.value).reduce(_ && _)
 
   def robTagToRobEntry(robTag: UInt): CommitBus = {
     // | Index into ROB           | Index into Vec returned by ROB
-    rob(robTag.head(robAddrWidth))(robTag.tail(robAddrWidth))
+    rob(robTag.head(robAddrWidth))(robTag.tail(robAddrWidth)).bits
   }
 
   def robTagToReadyEntry(robTag: UInt): Bool = {
@@ -53,7 +58,7 @@ class ReorderBuffer(config: MusvitConfig) extends Module with ControlValues {
 
   when(do_enq) {
     rob(enq_ptr.value) := io.issue.bits
-    readyReg(enq_ptr.value) := VecInit.fill(config.fetchWidth)(false.B)
+    readyReg(enq_ptr.value) := VecInit.tabulate(config.fetchWidth)( (i) => io.issue.bits(i).valid.unary_! )
     enq_ptr.inc()
   }
   when(do_deq) {
@@ -86,7 +91,7 @@ class ReorderBuffer(config: MusvitConfig) extends Module with ControlValues {
 
   // Write results from CDB
   for (i <- 0 until io.cdb.length) {
-    when(io.cdb(i).valid && !robTagToReadyEntry(io.cdb(i).bits.robTag)) {
+    when(io.cdb(i).valid) {
       robTagToRobEntry(io.cdb(i).bits.robTag).data <> io.cdb(i).bits.data
       robTagToRobEntry(io.cdb(i).bits.robTag).target <> io.cdb(i).bits.target
       robTagToReadyEntry(io.cdb(i).bits.robTag) := true.B

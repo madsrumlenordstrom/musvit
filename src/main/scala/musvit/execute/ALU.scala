@@ -37,9 +37,7 @@ class ALU (config: MusvitConfig) extends FunctionalUnit(config) {
   ))
 
   // Calculate jump and branch target
-  fu.result.bits.target := MuxCase(pc + imm, Seq(
-    (op === ALU.JALR) -> (data1 + imm),
-  ))
+  fu.result.bits.target := Mux(op === ALU.JALR, data1, pc) + imm
     
   fu.result.valid := dataValid && busyReg
 }

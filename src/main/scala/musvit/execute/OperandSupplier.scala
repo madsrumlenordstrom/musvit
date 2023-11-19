@@ -49,8 +49,8 @@ class OperandSupplier(config: MusvitConfig) extends Module with ControlValues {
   for (i <- 0 until config.fetchWidth) {
     // Check branch
     branches(i) := MuxCase(false.B, Seq(
-      (rob.io.commit.bits(i).wb === WB.PC)  -> (rob.io.commit.bits(i).branched ^ rob.io.commit.bits(i).data(0)),
-      (rob.io.commit.bits(i).wb === WB.JMP) -> true.B,
+      (rob.io.commit.bits(i).bits.wb === WB.PC)  -> (rob.io.commit.bits(i).bits.branched ^ rob.io.commit.bits(i).bits.data(0)),
+      (rob.io.commit.bits(i).bits.wb === WB.JMP) -> true.B,
     ))
 
     // Check if a previous instruction in the commit packet has branched or jumped
@@ -62,8 +62,8 @@ class OperandSupplier(config: MusvitConfig) extends Module with ControlValues {
     regMap.io.write(i).rs := io.issue.bits(i).rd
     regMap.io.write(i).en := io.issue.fire && io.issue.bits(i).wb === WB.REG_OR_JMP && !flushed
     regMap.io.write(i).robTag := rob.io.freeTags(i)
-    regMap.io.clear(i).rs := rob.io.commit.bits(i).rd
-    regMap.io.clear(i).clear := rob.io.commit.fire && rob.io.commit.bits(i).wb === WB.REG_OR_JMP  && !flushed
+    regMap.io.clear(i).rs := rob.io.commit.bits(i).bits.rd
+    regMap.io.clear(i).clear := rob.io.commit.fire && rob.io.commit.bits(i).bits.wb === WB.REG_OR_JMP  && !flushed
 
     // Connect ROB
     rob.io.read(i).robTag1 := regMap.io.read(i).robTag1.bits
@@ -72,12 +72,12 @@ class OperandSupplier(config: MusvitConfig) extends Module with ControlValues {
     // Connect register file
     rf.io.read(i).rs1 := io.read(i).rs1
     rf.io.read(i).rs2 := io.read(i).rs2
-    rf.io.write(i).rd := rob.io.commit.bits(i).rd
-    rf.io.write(i).data := rob.io.commit.bits(i).data
-    rf.io.write(i).en := rob.io.commit.fire && rob.io.commit.bits(i).wb === WB.REG_OR_JMP && !flushed
+    rf.io.write(i).rd := rob.io.commit.bits(i).bits.rd
+    rf.io.write(i).data := rob.io.commit.bits(i).bits.data
+    rf.io.write(i).en := rob.io.commit.fire && rob.io.commit.bits(i).bits.wb === WB.REG_OR_JMP && !flushed
 
     // Connect targets to PC arbiter
-    targets(i).bits.data := rob.io.commit.bits(i).target
+    targets(i).bits.data := rob.io.commit.bits(i).bits.target
     targets(i).bits.en   := branches(i) && rob.io.commit.fire
     targets(i).valid     := branches(i) && rob.io.commit.fire
 
