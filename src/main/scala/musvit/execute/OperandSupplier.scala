@@ -10,10 +10,11 @@ import musvit.execute.IssueSource
 import musvit.fetch.ProgramCounterWritePort
 
 class OperandSupplierReadPort(config: MusvitConfig) extends Bundle {
-  val rs1   = Input(UInt(REG_ADDR_WIDTH.W))
-  val rs2   = Input(UInt(REG_ADDR_WIDTH.W))
-  val src1  = new IssueSource(config)
-  val src2  = new IssueSource(config)
+  val rs1     = Input(UInt(REG_ADDR_WIDTH.W))
+  val rs2     = Input(UInt(REG_ADDR_WIDTH.W))
+  val src1    = Output(new IssueSource(config))
+  val src2    = Output(new IssueSource(config))
+  val robTag  = Output(ROBTag(config)) // ROB tag assigned to instruction and result
 }
 
 class OperandSupplierIO(config: MusvitConfig) extends Bundle {
@@ -119,6 +120,7 @@ class OperandSupplier(config: MusvitConfig) extends Module with ControlValues {
     // Set default ROB tags
     io.read(i).src1.robTag := regMap.io.read(i).robTag1.bits
     io.read(i).src2.robTag := regMap.io.read(i).robTag2.bits
+    io.read(i).robTag := rob.io.freeTags(i)
 
     // Check for conflicting registers and rename
     for (j <- 0 until i) {

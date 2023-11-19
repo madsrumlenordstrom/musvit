@@ -14,11 +14,6 @@ class ReorderBufferReadPort(config: MusvitConfig) extends Bundle {
   val data2 = Valid(UInt(WORD_WIDTH.W))
 }
 
-class ReorderBufferIssue(config: MusvitConfig) extends Bundle {
-  val commit = Vec(config.fetchWidth, CommitBus(config))
-  val ready = Vec(config.fetchWidth, Bool())
-}
-
 class ReorderBufferIO(config: MusvitConfig) extends Bundle {
   val flush = Input(Bool())
   val issue = Flipped(Decoupled(Vec(config.fetchWidth, Valid(CommitBus(config)))))
