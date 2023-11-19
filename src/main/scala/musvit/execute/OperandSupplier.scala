@@ -17,7 +17,7 @@ class OperandSupplierReadPort(config: MusvitConfig) extends Bundle {
 }
 
 class OperandSupplierIO(config: MusvitConfig) extends Bundle {
-  val issue = Flipped(Decoupled(Vec(config.fetchWidth, CommitBus(config))))
+  val issue = Flipped(Decoupled(Vec(config.fetchWidth, Valid(CommitBus(config)))))
   val read  = Vec(config.fetchWidth, new OperandSupplierReadPort(config))
   val cdb   = Vec(config.fetchWidth, Flipped(Valid(CommonDataBus(config))))
   val pc    = Output(new ProgramCounterWritePort())
@@ -56,14 +56,18 @@ class OperandSupplier(config: MusvitConfig) extends Module with ControlValues {
     // Check if a previous instruction in the commit packet has branched or jumped
     val flushed = if (i == 0) false.B else branches.dropRight(config.fetchWidth - i).reduce(_ || _)
 
+    // Issue and commit conditions
+    val issueValid = io.issue.fire && io.issue.bits(i).fire && !flush
+    val commitValid = rob.io.commit.fire && rob.io.commit.bits(i).fire && !flushed
+
     // Connect register map table
     regMap.io.read(i).rs1 := io.read(i).rs1
     regMap.io.read(i).rs2 := io.read(i).rs2
-    regMap.io.write(i).rs := io.issue.bits(i).rd
-    regMap.io.write(i).en := io.issue.fire && io.issue.bits(i).wb === WB.REG_OR_JMP && !flushed
+    regMap.io.write(i).rs := io.issue.bits(i).bits.rd
+    regMap.io.write(i).en := issueValid && io.issue.bits(i).bits.wb === WB.REG_OR_JMP
     regMap.io.write(i).robTag := rob.io.freeTags(i)
     regMap.io.clear(i).rs := rob.io.commit.bits(i).bits.rd
-    regMap.io.clear(i).clear := rob.io.commit.fire && rob.io.commit.bits(i).bits.wb === WB.REG_OR_JMP  && !flushed
+    regMap.io.clear(i).clear := commitValid && rob.io.commit.bits(i).bits.wb === WB.REG_OR_JMP
 
     // Connect ROB
     rob.io.read(i).robTag1 := regMap.io.read(i).robTag1.bits
@@ -74,12 +78,12 @@ class OperandSupplier(config: MusvitConfig) extends Module with ControlValues {
     rf.io.read(i).rs2 := io.read(i).rs2
     rf.io.write(i).rd := rob.io.commit.bits(i).bits.rd
     rf.io.write(i).data := rob.io.commit.bits(i).bits.data
-    rf.io.write(i).en := rob.io.commit.fire && rob.io.commit.bits(i).bits.wb === WB.REG_OR_JMP && !flushed
+    rf.io.write(i).en := commitValid && rob.io.commit.bits(i).bits.wb === WB.REG_OR_JMP
 
     // Connect targets to PC arbiter
     targets(i).bits.data := rob.io.commit.bits(i).bits.target
-    targets(i).bits.en   := branches(i) && rob.io.commit.fire
-    targets(i).valid     := branches(i) && rob.io.commit.fire
+    targets(i).bits.en   := commitValid && branches(i)
+    targets(i).valid     := commitValid && branches(i)
 
     def validateData[T <: Data](data: T): Valid[T] = {
       val d = Wire(Valid(chiselTypeOf(data)))
@@ -119,18 +123,20 @@ class OperandSupplier(config: MusvitConfig) extends Module with ControlValues {
     // Check for conflicting registers and rename
     for (j <- 0 until i) {
       when(
-        io.read(i).rs1 === io.issue.bits(j).rd &&
+        io.read(i).rs1 === io.issue.bits(j).bits.rd &&
           io.read(i).rs1 =/= 0.U &&
-          (io.issue.bits(j).wb === WB.REG_OR_JMP) // JMP should flush so maybe not neccessary
+          io.issue.bits(j).bits.wb === WB.REG_OR_JMP && // JMP should flush so maybe not neccessary
+          io.issue.bits(j).fire
       ) {
         io.read(i).src1.data.valid := false.B
         io.read(i).src1.robTag := regMap.io.read(j).robTag1.bits
       }
 
       when(
-        io.read(i).rs2 === io.issue.bits(j).rd &&
+        io.read(i).rs2 === io.issue.bits(j).bits.rd &&
           io.read(i).rs2 =/= 0.U &&
-          (io.issue.bits(j).wb === WB.REG_OR_JMP) // JMP should flush so maybe not neccessary
+          io.issue.bits(j).bits.wb === WB.REG_OR_JMP && // JMP should flush so maybe not neccessary
+          io.issue.bits(j).fire
       ) {
         io.read(i).src2.data.valid := false.B
         io.read(i).src2.robTag := regMap.io.read(j).robTag2.bits

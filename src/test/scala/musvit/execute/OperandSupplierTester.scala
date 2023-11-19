@@ -1,6 +1,7 @@
 package musvit.execute
 
 import chisel3._
+import chisel3.util._
 import chiseltest._
 import chisel3.experimental.BundleLiterals._
 import org.scalatest.flatspec.AnyFlatSpec
@@ -23,17 +24,18 @@ class OperandSupplierTester extends AnyFlatSpec with ChiselScalatestTester with 
     test(new OperandSupplier(config)).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
       dut.clock.setTimeout(0)
 
-      val issues = Queue[Seq[CommitBus]]()
+      val issues = Queue[Seq[Valid[CommitBus]]]()
       val writeData = Seq.fill(config.robEntries)(Random.nextInt())
       val writeTargets = Seq.fill(config.robEntries)(Random.nextInt())
 
-      def commitBus(data: Int, target: Int, rd: Int, wb: Int, branched: Boolean): CommitBus = {
+      def commitBus(data: Int, target: Int, rd: Int, wb: Int, branched: Boolean, valid: Boolean): Valid[CommitBus] = {
         chiselTypeOf(dut.io.issue.bits.head).Lit(
-          _.data -> intToUInt(data),
-          _.target -> intToUInt(target),
-          _.rd -> intToUInt(rd),
-          _.wb -> intToUInt(wb),
-          _.branched -> branched.B
+          _.bits.data -> intToUInt(data),
+          _.bits.target -> intToUInt(target),
+          _.bits.rd -> intToUInt(rd),
+          _.bits.wb -> intToUInt(wb),
+          _.bits.branched -> branched.B,
+          _.valid -> valid.B,
         )
       }
 
@@ -45,7 +47,7 @@ class OperandSupplierTester extends AnyFlatSpec with ChiselScalatestTester with 
         )
       }
 
-      def issue(data: Seq[CommitBus]): Unit = {
+      def issue(data: Seq[Valid[CommitBus]]): Unit = {
         dut.io.issue.valid.poke(true.B)
         for (i <- 0 until dut.io.issue.bits.length) {
           dut.io.issue.bits(i).poke(data(i))
@@ -80,14 +82,14 @@ class OperandSupplierTester extends AnyFlatSpec with ChiselScalatestTester with 
 
       // Issue      
       for (i <- 0 until config.robEntries / config.fetchWidth) {
-        val data = Seq.tabulate(config.fetchWidth)(j => commitBus(Random.nextInt(), Random.nextInt(), (config.fetchWidth * i) + j, WB.REG.value.toInt, false))
+        val data = Seq.tabulate(config.fetchWidth)(j => commitBus(Random.nextInt(), Random.nextInt(), (config.fetchWidth * i) + j, WB.REG.value.toInt, false, true))
         issue(data)
         issues.enqueue(data)
       }
 
       // Read operands
       for (i <- 0 until config.robEntries) {
-        val data = if (i == 0) 0 else issues(i / config.fetchWidth)(i % config.fetchWidth).data.litValue.toInt
+        val data = if (i == 0) 0 else issues(i / config.fetchWidth)(i % config.fetchWidth).bits.data.litValue.toInt
         val valid = if(i == 0) true else false
         val source = issueSource(i, data, valid)
         read(i, source)
@@ -104,7 +106,7 @@ class OperandSupplierTester extends AnyFlatSpec with ChiselScalatestTester with 
 
 
       // Test branch
-      val nonBranched = Seq.fill(config.fetchWidth)(commitBus(0, 0, 0, WB.PC.value.toInt, false))
+      val nonBranched = Seq.fill(config.fetchWidth)(commitBus(0, 0, 0, WB.PC.value.toInt, false, true))
       issue(nonBranched)
       for (i <- 0 until config.fetchWidth) {
         dut.io.pc.en.expect(false.B)
@@ -115,7 +117,7 @@ class OperandSupplierTester extends AnyFlatSpec with ChiselScalatestTester with 
       dut.clock.step(1)
       dut.io.pc.en.expect(false.B)
 
-      val branched = Seq.fill(config.fetchWidth)(commitBus(0, 0, 0, WB.PC.value.toInt, true))
+      val branched = Seq.fill(config.fetchWidth)(commitBus(0, 0, 0, WB.PC.value.toInt, true, true))
       issue(branched)
       for (i <- 0 until config.fetchWidth) {
         dut.io.pc.en.expect(false.B)
@@ -125,23 +127,6 @@ class OperandSupplierTester extends AnyFlatSpec with ChiselScalatestTester with 
       dut.io.pc.data.expect(intToUInt(writeTargets(0)))
       dut.clock.step(1)
       dut.io.pc.en.expect(false.B)
-
-      // Write operands
-      //for (i <- 0 until config.robEntries) {
-      //  val writeVal = Random.nextInt()
-      //  write(i, writeVal)
-      //  read(i, writeVal, true)
-      //  dut.clock.step(1)
-      //}
-
-      // Flush
-      //dut.io.commit.valid.expect(true.B)
-      //dut.io.issue.ready.expect(false.B)
-      //dut.io.flush.poke(true.B)
-      //dut.clock.step(1)
-      //dut.io.commit.valid.expect(false.B)
-      //dut.io.issue.ready.expect(true.B)
-
     }
   }
 }
