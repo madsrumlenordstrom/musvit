@@ -32,11 +32,10 @@ class OperandSupplier(config: MusvitConfig) extends Module with ControlValues {
   val regMap  = Module(new RegisterMapTable(config))
   val rob     = Module(new ReorderBuffer(config))
   val rf      = Module(new RegisterFile(config))
-  val pcArb   = Module(new Arbiter(new ProgramCounterWritePort, config.fetchWidth))
+  val pcArb   = Module(new Arbiter(new ProgramCounterWritePort(), config.fetchWidth))
 
   val branches  = Wire(Vec(config.fetchWidth, Bool()))
-  val flush     = branches.reduce(_ || _)  && rob.io.commit.fire
-  val targets   = Wire(Vec(config.fetchWidth, Decoupled(new ProgramCounterWritePort)))
+  val flush     = branches.reduce(_ || _) && rob.io.commit.fire
 
   io.flush := flush
   regMap.io.flush := flush
@@ -44,7 +43,6 @@ class OperandSupplier(config: MusvitConfig) extends Module with ControlValues {
   rob.io.issue <> io.issue
   rob.io.cdb <> io.cdb
   rob.io.commit.ready := true.B // TODO figure this out
-  pcArb.io.in <> targets
   pcArb.io.out.ready := true.B // TODO figure this out
   io.pc <> pcArb.io.out.bits
 
@@ -83,9 +81,9 @@ class OperandSupplier(config: MusvitConfig) extends Module with ControlValues {
     rf.io.write(i).en := commitValid && rob.io.commit.bits(i).bits.wb === WB.REG_OR_JMP
 
     // Connect targets to PC arbiter
-    targets(i).bits.data := rob.io.commit.bits(i).bits.target
-    targets(i).bits.en   := commitValid && branches(i)
-    targets(i).valid     := commitValid && branches(i)
+    pcArb.io.in(i).bits.data  := rob.io.commit.bits(i).bits.target
+    pcArb.io.in(i).valid      := (commitValid && branches(i)).asBool
+    pcArb.io.in(i).bits.en    := (commitValid && branches(i)).asBool
 
     // Read operand 1
     io.read(i).src1.data := MuxCase(
