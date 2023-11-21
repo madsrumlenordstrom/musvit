@@ -11,8 +11,12 @@ class FunctionalUnitIO(config: MusvitConfig) extends Bundle {
   val result = Decoupled(CommonDataBus(config))
 }
 
-class FunctionalUnit(config: MusvitConfig) extends ReservationStation(config) with ControlValues {
+abstract class FunctionalUnit(config: MusvitConfig) extends ReservationStation(config) with ControlValues {
   val fu = IO(new FunctionalUnitIO(config))
+
+  // Type for indentifying funtional unit type
+  val fuType: UInt
+
   fu.result.bits.robTag := rsReg.robTag
   fu.result.bits.target := 0.U // Default value for FUs that dont generate target
 

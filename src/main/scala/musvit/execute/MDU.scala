@@ -11,6 +11,9 @@ import utility.Negate
 import utility.SignExtend
 
 class Multiplier(config: MusvitConfig, cycles: Int = 4) extends FunctionalUnit(config) {
+
+  override val fuType = FU.MUL.value.U
+
   val resultReg = RegInit(0.U((2 * WORD_WIDTH).W))
 
   val validReg = RegInit(false.B)
@@ -63,6 +66,9 @@ class Multiplier(config: MusvitConfig, cycles: Int = 4) extends FunctionalUnit(c
 }
 
 class Divider(config: MusvitConfig) extends FunctionalUnit(config) {
+
+  override val fuType = FU.DIV.value.U
+
   val remainderReg = RegInit(0.U((WORD_WIDTH + 1).W))
   val quotientReg = RegInit(0.U(WORD_WIDTH.W))
 

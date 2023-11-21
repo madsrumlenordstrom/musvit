@@ -8,6 +8,9 @@ import musvit.MusvitConfig
 import utility.Constants._
 
 class ALU (config: MusvitConfig) extends FunctionalUnit(config) {
+  
+  val fuType = FU.ALU.value.U
+
   val shamt = data2(4, 0)
   
   val lt = data1.asSInt < data2.asSInt
