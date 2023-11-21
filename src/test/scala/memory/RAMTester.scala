@@ -39,7 +39,6 @@ class RAMTester extends AnyFlatSpec with ChiselScalatestTester {
       // Write to RAM
       println("Writing to RAM")
       for (i <- 0 until words.length) {
-        println(i)
         write(i.asUInt(dut.io.writeAddr.getWidth.W), words(i))
       }
       
