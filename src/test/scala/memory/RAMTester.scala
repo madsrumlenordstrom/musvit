@@ -18,7 +18,7 @@ class RAMTester extends AnyFlatSpec with ChiselScalatestTester {
   val words = fileToUInts(testFile, width)
 
   "SyncRAM" should "pass" in {
-    test(new RAM(words.length, width)).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
+    test(new RAM(words.length, width)).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
       
       def write(addr: UInt, data: UInt, steps: Int = 1): Unit = {
         dut.io.writeEn.poke(true.B)
@@ -39,6 +39,7 @@ class RAMTester extends AnyFlatSpec with ChiselScalatestTester {
       // Write to RAM
       println("Writing to RAM")
       for (i <- 0 until words.length) {
+        println(i)
         write(i.asUInt(dut.io.writeAddr.getWidth.W), words(i))
       }
       
@@ -78,7 +79,7 @@ class MusvitRAMTester extends AnyFlatSpec with ChiselScalatestTester with Contro
   val config = MusvitConfig(ramAddr = 0x00000000, ramSize = 0x00002000)
 
   "MusvitRAM" should "pass" in {
-    test(new MusvitRAM(config)).withAnnotations(Seq(WriteVcdAnnotation, VerilatorBackendAnnotation)) { dut =>
+    test(new MusvitRAM(config)).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
 
       def write(addr: UInt, data: UInt, op: BitPat, steps: Int = 1): Unit = {
         dut.io.en.poke(true.B)

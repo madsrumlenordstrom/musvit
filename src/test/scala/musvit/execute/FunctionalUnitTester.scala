@@ -27,7 +27,7 @@ class FunctionalUnitTester extends AnyFlatSpec with ChiselScalatestTester with C
   }
 
   def issueSource(dut: ReservationStation, data: Int, valid: Boolean, tag: Int): IssueSource = {
-    chiselTypeOf(dut.rs.ib.head.src1).Lit(
+    chiselTypeOf(dut.rs.ib.bits.src1).Lit(
       _.data.bits -> intToUInt(data),
       _.data.valid -> valid.B,
       _.robTag -> intToUInt(tag),
@@ -38,12 +38,12 @@ class FunctionalUnitTester extends AnyFlatSpec with ChiselScalatestTester with C
     issueSource(dut,
       data = Random.nextInt(),
       valid = Random.nextBoolean(),
-      tag = Random.nextInt(bitWidthToUIntMax(dut.rs.ib.head.robTag.getWidth).toInt)
+      tag = Random.nextInt(bitWidthToUIntMax(dut.rs.ib.bits.robTag.getWidth).toInt)
     )
   }
 
   def issueBus(dut: ReservationStation, op: Int, src1: IssueSource, src2: IssueSource, robTag: Int, imm: Int = 0, pc: Int = 0): IssueBus = {
-    chiselTypeOf(dut.rs.ib.head).Lit(
+    chiselTypeOf(dut.rs.ib.bits).Lit(
       _.op -> intToUInt(op),
       _.src1 -> src1,
       _.src2 -> src2,
@@ -55,31 +55,30 @@ class FunctionalUnitTester extends AnyFlatSpec with ChiselScalatestTester with C
 
   def getRandomIssueBus(dut: ReservationStation): IssueBus = {
     issueBus(dut,
-      op = Random.nextInt(bitWidthToUIntMax(dut.rs.ib.head.op.getWidth).toInt),
+      op = Random.nextInt(bitWidthToUIntMax(dut.rs.ib.bits.op.getWidth).toInt),
       src1 = getRandomIssueSource(dut),
       src2 = getRandomIssueSource(dut),
-      robTag = Random.nextInt(bitWidthToUIntMax(dut.rs.ib.head.robTag.getWidth).toInt),
+      robTag = Random.nextInt(bitWidthToUIntMax(dut.rs.ib.bits.robTag.getWidth).toInt),
       imm = Random.nextInt(),
       pc = Random.nextInt(),
     )
   }
 
-  def issue(dut: ReservationStation, issueData: IssueBus, ibIdx: Int = 0): Unit = {
-    dut.rs.ib(ibIdx).poke(issueData)
-    dut.rs.ibIdx.poke(ibIdx)
-    dut.rs.writeEn.poke(true.B)
+  def issue(dut: ReservationStation, issueData: IssueBus): Unit = {
+    dut.rs.ib.bits.poke(issueData)
+    dut.rs.ib.valid.poke(true.B)
     step(dut.clock, 1)
-    dut.rs.writeEn.poke(false.B)
+    dut.rs.ib.valid.poke(false.B)
     if (resetAfterPokes) {
       val dummyData = issueSource(dut, 0, false, dummyTag)
-      dut.rs.ib(ibIdx).poke(issueBus(dut, 0, dummyData, dummyData, 0, 0))
+      dut.rs.ib.bits.poke(issueBus(dut, 0, dummyData, dummyData, 0, 0))
     }
   }
 
   def issueData(dut: ReservationStation, op: Int, data1: Int, data2: Int, robTag: Int = dummyTag, imm: Int = 0, pc: Int = 0): Unit = {
     val src1 = issueSource(dut, data1, true, dummyTag)
     val src2 = issueSource(dut, data2, true, dummyTag)
-    issue(dut, issueBus(dut, op, src1, src2, robTag, imm, pc), Random.nextInt(config.fetchWidth))
+    issue(dut, issueBus(dut, op, src1, src2, robTag, imm, pc))
   }
 
   def writeCDB(dut: ReservationStation, tag: Int, data: Int, cdbIdx: Int = 0): Unit = {

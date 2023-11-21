@@ -8,11 +8,8 @@ import musvit.common.ControlValues
 import utility.Constants._
 
 class ReservationStationIO(config: MusvitConfig) extends Bundle with ControlValues {
-  val ib = Vec(config.fetchWidth, Input(IssueBus(config)))                    // Issue bus
-  val ibIdx = Input(UInt(config.fetchWidth.W))                                // Index of issue bus to read
-  val writeEn = Input(Bool())
+  val ib = Flipped(Decoupled(IssueBus(config)))                           // Issue bus
   val cdb = Flipped(Vec(config.fetchWidth, Valid(CommonDataBus(config)))) // Commmon data bus for monitor
-  val ready = Output(Bool())
   val flush = Input(Bool())
 }
 
@@ -21,15 +18,14 @@ class ReservationStation(config: MusvitConfig) extends Module {
 
   // Busy indicator
   val busyReg = RegInit(false.B)
-  rs.ready := !busyReg
-  //assert(busyReg && rs.writeEn, "ERROR: busyReg and rs.writeEn was true at the same time")
+  rs.ib.ready := !busyReg
 
   // Source data
   val rsReg = RegInit(0.U.asTypeOf(IssueBus(config)))
   val dataValid = rsReg.src1.data.valid && rsReg.src2.data.valid
 
-  when (rs.writeEn) {
-    rsReg := rs.ib(rs.ibIdx)
+  when (rs.ib.fire) {
+    rsReg := rs.ib.bits
     busyReg := true.B // Functional unit will be responsible for setting this low when operation is complete
   }
 
@@ -48,8 +44,6 @@ class ReservationStation(config: MusvitConfig) extends Module {
   // Flush by setting state to non busy
   when (rs.flush) {
     busyReg := false.B
-    // rsReg.src1.valid := false.B
-    // rsReg.src2.valid := false.B
   }
 }
 

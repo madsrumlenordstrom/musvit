@@ -24,7 +24,7 @@ class FunctionalUnit(config: MusvitConfig) extends ReservationStation(config) wi
 
   // Mark operation as done
   when (fu.result.fire) {
-    busyReg := rs.writeEn
-    rs.ready := true.B
+    busyReg := rs.ib.fire
+    rs.ib.ready := true.B
   }
 }
