@@ -39,16 +39,16 @@ class Frontend(config: MusvitConfig) extends Module {
 
   // Program counter
   val pc = ProgramCounter(config)
-  pc.io.enable := fp.ready
+  pc.io.enable := fp.fire
   pc.io.write <> io.pc
   
   // Instruction memory
   io.read.addr := pc.io.pc
-  io.read.en := true.B // TODO
+  io.read.data.ready := fp.ready
   
   // Create instruction packet
-  fp.valid := !io.flush
-  fp.bits.insts <> io.read.data
+  fp.valid := io.read.data.valid && !io.flush
+  fp.bits.insts <> io.read.data.bits
   fp.bits.pc := pc.io.pc
   fp.bits.branched := VecInit(Seq.fill(config.fetchWidth)(false.B)) // TODO
 

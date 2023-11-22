@@ -1,7 +1,7 @@
 package memory
 
 import chisel3._
-import chisel3.util.{log2Up, RegEnable, isPow2}
+import chisel3.util.{log2Up, RegEnable, isPow2, Decoupled}
 
 import musvit.MusvitConfig
 import utility.Functions._
@@ -25,14 +25,13 @@ class ROM(contents: Seq[UInt]) extends Module {
 }
 
 class MusvitROMIO(config: MusvitConfig) extends Bundle {
-  val en = Input(Bool())
-  val addr = Input(UInt(log2Up(config.romSize).W))
-  val data = Output(Vec(config.fetchWidth, UInt(INST_WIDTH.W)))
+  val addr = Input(UInt(ADDR_WIDTH.W))
+  // Decoupled IO has ready which will functions as a read enable (not used in ROM but useful for a cache)
+  val data = Decoupled(Vec(config.fetchWidth, UInt(INST_WIDTH.W)))
 }
 
 class MusvitROM(config: MusvitConfig) extends Module {
   val io = IO(new MusvitROMIO(config))
-  // val io = IO(new ReadIO(config.romSize, INST_WIDTH * config.fetchWidth))
 
   // Get ROM contents from file
   val contents = fileToUInts(config.romFile, INST_WIDTH)
@@ -77,7 +76,10 @@ class MusvitROM(config: MusvitConfig) extends Module {
   }
 
   // Rotate data
-  io.data := BarrelShifter.leftRotate(VecInit(data), shamt)
+  io.data.bits := BarrelShifter.leftRotate(VecInit(data), shamt)
+
+  // Validate data
+  io.data.valid := Mux(relaAddr < config.romSize.U, true.B, false.B)
 }
 
 object MusvitROM {

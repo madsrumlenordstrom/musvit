@@ -25,9 +25,12 @@ class FrontendTester extends AnyFlatSpec with ChiselScalatestTester {
       dut.io.pc.en.poke(false.B)
 
       def issueInstructions(insts: Seq[UInt]): Unit = {
+        dut.io.read.data.valid.poke(true.B)
         for (i <- 0 until insts.length) {
-          dut.io.read.data(i).poke(insts(i))
+          dut.io.read.data.bits(i).poke(insts(i))
         }
+        dut.clock.step(1)
+        dut.io.read.data.valid.poke(false.B)
       }
 
       def readInstructions(insts: Seq[UInt]): Unit = {
@@ -42,6 +45,9 @@ class FrontendTester extends AnyFlatSpec with ChiselScalatestTester {
 
       // Issue instructions
       for (i <- 0 until words.length / config.fetchWidth) {
+        while (!dut.io.read.data.ready.peekBoolean()) {
+          dut.clock.step(1)
+        }
         val addr = dut.io.read.addr.peekInt().toInt / 4
         val insts = Seq.tabulate(config.fetchWidth)( (j) => words(addr + j))
         issueInstructions(insts)

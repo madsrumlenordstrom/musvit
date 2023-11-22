@@ -36,7 +36,7 @@ class MusvitROMTester extends AnyFlatSpec with ChiselScalatestTester {
     test(new MusvitROM(config)).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
       dut.clock.setTimeout(0)
 
-      dut.io.en.poke(true.B)
+      dut.io.data.ready.poke(true.B)
 
       for (i <- 0 until (dut.contents.length - config.fetchWidth)) {
 
@@ -44,7 +44,7 @@ class MusvitROMTester extends AnyFlatSpec with ChiselScalatestTester {
         dut.io.addr.poke(addr)
         
         for (j <- 0 until config.fetchWidth) {
-          dut.io.data(j).expect(dut.contents(i + j))
+          dut.io.data.bits(j).expect(dut.contents(i + j))
         }
         
         dut.clock.step(1)
