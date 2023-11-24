@@ -21,6 +21,7 @@ class RegisterMapTableWritePort(config: MusvitConfig) extends Bundle {
 class RegisterMapTableClearPort(config: MusvitConfig) extends Bundle {
   val rs = Input(UInt(REG_ADDR_WIDTH.W))
   val clear = Input(Bool())
+  val robTag = Input(ROBTag(config))
 }
 
 class RegisterMapTableIO(config: MusvitConfig) extends Bundle {
@@ -47,7 +48,7 @@ class RegisterMapTable(config: MusvitConfig) extends Module {
     }
 
     // Clear valid bit (used for committing)
-    when (io.clear(i).clear) { regMap(io.clear(i).rs).valid := false.B }
+    when (io.clear(i).clear && io.clear(i).robTag === regMap(io.clear(i).rs).bits) { regMap(io.clear(i).rs).valid := false.B }
   }
 
   // Mark all as invalid on flush

@@ -15,12 +15,13 @@ class ReorderBufferReadPort(config: MusvitConfig) extends Bundle {
 }
 
 class ReorderBufferIO(config: MusvitConfig) extends Bundle {
-  val flush = Input(Bool())
-  val issue = Flipped(Decoupled(Vec(config.fetchWidth, Valid(CommitBus(config)))))
-  val commit = Decoupled(Vec(config.fetchWidth, Valid(CommitBus(config))))
-  val read = Vec(config.fetchWidth, new ReorderBufferReadPort(config))
-  val cdb = Vec(config.fetchWidth, Flipped(Valid(CommonDataBus(config))))
-  val freeTags = Output(Vec(config.fetchWidth, ROBTag(config)))
+  val flush       = Input(Bool())
+  val issue       = Flipped(Decoupled(Vec(config.fetchWidth, Valid(CommitBus(config)))))
+  val commit      = Decoupled(Vec(config.fetchWidth, Valid(CommitBus(config))))
+  val read        = Vec(config.fetchWidth, new ReorderBufferReadPort(config))
+  val cdb         = Vec(config.fetchWidth, Flipped(Valid(CommonDataBus(config))))
+  val issueTags   = Output(Vec(config.fetchWidth, ROBTag(config)))
+  val commitTags  = Output(Vec(config.fetchWidth, ROBTag(config)))
 }
 
 class ReorderBuffer(config: MusvitConfig) extends Module with ControlValues {
@@ -72,8 +73,12 @@ class ReorderBuffer(config: MusvitConfig) extends Module with ControlValues {
   io.commit.valid := !empty && dequeueReady
   io.commit.bits <> rob(deq_ptr.value)
 
-  for (i <- 0 until io.freeTags.length) {
-    io.freeTags(i) := enq_ptr.value ## i.U(log2Ceil(io.freeTags.length).W)
+  for (i <- 0 until io.issueTags.length) {
+    io.issueTags(i) := enq_ptr.value ## i.U(log2Ceil(io.issueTags.length).W)
+  }
+
+  for (i <- 0 until io.commitTags.length) {
+    io.commitTags(i) := deq_ptr.value ## i.U(log2Ceil(io.commitTags.length).W)
   }
 
   // Read operands

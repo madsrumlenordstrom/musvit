@@ -11,13 +11,20 @@ import utility.Functions._
 
 class MusvitCoreTester extends AnyFlatSpec with ChiselScalatestTester {
   // Test configuration
-  val fetchWidth = 2
+  val fetchWidth = 4
   val nop = 0x13.U(WORD_WIDTH.W)
   val testFile = "test.bin"
   val wordsLength = fileToUInts(testFile, INST_WIDTH).length
   val paddings = if (wordsLength % fetchWidth == 0) 0 else wordsLength + (fetchWidth - (wordsLength % fetchWidth))
   val words = fileToUInts(testFile, INST_WIDTH).padTo(paddings, nop)
   val config = MusvitConfig(fetchWidth = fetchWidth, instQueueEntries = words.length, aluNum = 2)
+  
+  var steps = 0
+
+  def step(clk: Clock, n: Int): Unit = {
+    clk.step(n)
+    steps += n
+  }
 
   "MusvitCore" should "pass" in {
     test(new MusvitCore(config)).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
@@ -30,14 +37,14 @@ class MusvitCoreTester extends AnyFlatSpec with ChiselScalatestTester {
         for (i <- 0 until insts.length) {
           dut.io.read.data.bits(i).poke(insts(i))
         }
-        dut.clock.step(1)
+        step(dut.clock, 1)
         dut.io.read.data.valid.poke(false.B)
       }
 
       // Issue instructions
       for (i <- 0 until words.length / config.fetchWidth) {
         while (!dut.io.read.data.ready.peekBoolean()) {
-          dut.clock.step(1)
+          step(dut.clock, 1)
         }
         val addr = dut.io.read.addr.peekInt().toInt / 4
         val insts = Seq.tabulate(config.fetchWidth)( (j) => words(addr + j))
@@ -46,8 +53,9 @@ class MusvitCoreTester extends AnyFlatSpec with ChiselScalatestTester {
       }
 
       // A few extra steps to make sure program completes
-      for (i <- 0 until 20) { dut.clock.step(1) }
+      for (i <- 0 until 10) { step(dut.clock, 1) }
 
+      println("Total steps was " + steps)
        
     }
   }

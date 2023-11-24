@@ -65,9 +65,10 @@ class OperandSupplier(config: MusvitConfig) extends Module with ControlValues {
     regMap.io.read(i).rs2 := io.read(i).rs2
     regMap.io.write(i).rs := io.issue.bits(i).bits.rd
     regMap.io.write(i).en := issueValid && io.issue.bits(i).bits.wb === WB.REG_OR_JMP
-    regMap.io.write(i).robTag := rob.io.freeTags(i)
+    regMap.io.write(i).robTag := rob.io.issueTags(i)
     regMap.io.clear(i).rs := rob.io.commit.bits(i).bits.rd
     regMap.io.clear(i).clear := commitValid && rob.io.commit.bits(i).bits.wb === WB.REG_OR_JMP
+    regMap.io.clear(i).robTag := rob.io.commitTags(i)
 
     // Connect ROB
     rob.io.read(i).robTag1 := regMap.io.read(i).robTag1.bits
@@ -112,7 +113,7 @@ class OperandSupplier(config: MusvitConfig) extends Module with ControlValues {
     // Set default ROB tags
     io.read(i).src1.robTag := regMap.io.read(i).robTag1.bits
     io.read(i).src2.robTag := regMap.io.read(i).robTag2.bits
-    io.read(i).robTag := rob.io.freeTags(i)
+    io.read(i).robTag := rob.io.issueTags(i)
 
     // Check for conflicting registers and rename
     for (j <- 0 until i) {
@@ -123,7 +124,7 @@ class OperandSupplier(config: MusvitConfig) extends Module with ControlValues {
           io.issue.bits(j).fire
       ) {
         io.read(i).src1.data.valid := false.B
-        io.read(i).src1.robTag := rob.io.freeTags(j)
+        io.read(i).src1.robTag := rob.io.issueTags(j)
       }
 
       when(
@@ -133,7 +134,7 @@ class OperandSupplier(config: MusvitConfig) extends Module with ControlValues {
           io.issue.bits(j).fire
       ) {
         io.read(i).src2.data.valid := false.B
-        io.read(i).src2.robTag := rob.io.freeTags(j)
+        io.read(i).src2.robTag := rob.io.issueTags(j)
       }
     }
   }
