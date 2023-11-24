@@ -87,16 +87,17 @@ trait ControlValues {
 
   // Writeback type
   object WB {
-    def MEM:  BitPat = BitPat("b00") // Write to memory
-    def REG:  BitPat = BitPat("b01") // Write to register file
-    def PC:   BitPat = BitPat("b10") // Write to PC (conditionally)
-    def JMP:  BitPat = BitPat("b11") // Write both reg and PC
+    def MEM:  BitPat = BitPat("b000") // Write to memory
+    def REG:  BitPat = BitPat("b001") // Write to register file
+    def PC:   BitPat = BitPat("b010") // Write to PC (conditionally)
+    def JMP:  BitPat = BitPat("b011") // Write both reg and PC
     /* JMP writeback takes whatever is in ROB target and set the PC the value.
     PC+4 which is contained in ROB data is written to RF */
+    def ECL:  BitPat = BitPat("b100")
 
-    def REG_OR_JMP: BitPat = BitPat("b?1")
-    def PC_OR_JMP:  BitPat = BitPat("b1?")
-    def X:    BitPat = BitPat("b??")
+    def REG_OR_JMP: BitPat = BitPat("b0?1")
+    def PC_OR_JMP:  BitPat = BitPat("b01?")
+    def X:    BitPat = BitPat("b???")
   }
 
   // Immediate formats

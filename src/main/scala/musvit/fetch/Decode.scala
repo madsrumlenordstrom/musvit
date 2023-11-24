@@ -73,9 +73,9 @@ class Decode(config: MusvitConfig) extends Module with RV32I with RV32M with Con
       DIVU    -> Seq(Y, FU.DIV, MDU.DIVU  , OP1.RS1 , OP2.RS2, Imm.X, WB.REG),
       REM     -> Seq(Y, FU.DIV, MDU.REM   , OP1.RS1 , OP2.RS2, Imm.X, WB.REG),
       REMU    -> Seq(Y, FU.DIV, MDU.REMU  , OP1.RS1 , OP2.RS2, Imm.X, WB.REG),
-
-      //FENCE   -> Seq(Y, ALU.ADD),
-      //ECALL   -> Seq(Y, ALU.ADD),
+      ECALL   -> Seq(Y, FU.ALU, ALU.X     , OP1.X   , OP2.X  , Imm.X, WB.ECL),
+      
+      //FENCE   -> Seq(Y, FU.ALU, ALU.ADD   , OP1.X   , OP2.X  , Imm.X, WB.REG),
       //EBREAK  -> Seq(Y, ALU.ADD),
     ).map({case (k, v) => k -> v.reduce(_ ## _)}),
     defaultCtrl.reduce(_ ## _)

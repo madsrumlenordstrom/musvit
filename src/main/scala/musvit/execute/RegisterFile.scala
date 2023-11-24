@@ -23,6 +23,8 @@ class RegisterFileWritePort(config: MusvitConfig) extends Bundle {
 class RegisterFileIO(config: MusvitConfig) extends Bundle {
   val read = Vec(config.fetchWidth, new RegisterFileReadPort(config))
   val write = Vec(config.fetchWidth, new RegisterFileWritePort(config))
+  val ecall = Input(Bool())
+  val exit  = Output(Bool())
 }
 
 class RegisterFile(config: MusvitConfig) extends Module with ControlValues {
@@ -40,4 +42,49 @@ class RegisterFile(config: MusvitConfig) extends Module with ControlValues {
   }
 
   rf(0) := 0.U // Hardwire to zero
+
+  // ECALL stuff
+
+  def printRegs() = {
+    for(i <- 0 until 8){
+      for(j <- 0 until 4){
+        printf("x(" + (j*8 + i) + ")")
+        if(j*8 + i == 8 || j*8 + i == 9){
+          printf(" ")
+        }
+        printf(p" = 0x${Hexadecimal(rf(j*8 + i))}\t")
+      }
+      printf("\n")
+    }
+    printf("\n\n")
+  }
+
+  val a0 = rf(10)
+  val a7 = rf(17)
+
+  io.exit := false.B
+
+  when(io.ecall) {
+    switch(a7) {
+      is (0.U) {
+        printf(p"${Decimal(a0)}\n")
+      }
+      is (3.U) {
+        printRegs()
+      }
+      is (4.U) {
+        printf(p"${Character(a0)}\n")
+      }
+      is (5.U) {
+        printf(p"${Hexadecimal(a0)}\n")
+      }
+      is (6.U) {
+        printf(p"${Binary(a0)}\n")
+      }
+      is (10.U) {
+        printf("Exit\n")
+        io.exit := true.B
+      }
+    }
+  }
 }

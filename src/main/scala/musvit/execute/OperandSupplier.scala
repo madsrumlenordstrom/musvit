@@ -24,6 +24,7 @@ class OperandSupplierIO(config: MusvitConfig) extends Bundle {
   val cdb   = Vec(config.fetchWidth, Flipped(Valid(CommonDataBus(config))))
   val pc    = Output(new ProgramCounterWritePort())
   val flush = Output(Bool())
+  val exit  = Output(Bool())
 }
 
 class OperandSupplier(config: MusvitConfig) extends Module with ControlValues {
@@ -34,7 +35,8 @@ class OperandSupplier(config: MusvitConfig) extends Module with ControlValues {
   val rf      = Module(new RegisterFile(config))
   val pcArb   = Module(new Arbiter(new ProgramCounterWritePort(), config.fetchWidth))
 
-  val branches  = Wire(Vec(config.fetchWidth, Bool()))
+  val branches  = Seq.fill(config.fetchWidth)(Wire(Bool()))
+  val ecalls    = Seq.fill(config.fetchWidth)(Wire(Bool()))
   val flush     = branches.reduce(_ || _) && rob.io.commit.fire
 
   io.flush := flush
@@ -45,6 +47,8 @@ class OperandSupplier(config: MusvitConfig) extends Module with ControlValues {
   rob.io.commit.ready := true.B // TODO figure this out
   pcArb.io.out.ready := true.B // TODO figure this out
   io.pc <> pcArb.io.out.bits
+  rf.io.ecall := ecalls.reduce(_ || _)
+  io.exit := rf.io.exit
 
   for (i <- 0 until config.fetchWidth) {
     // Check branch
@@ -59,6 +63,8 @@ class OperandSupplier(config: MusvitConfig) extends Module with ControlValues {
     // Issue and commit conditions
     val issueValid = io.issue.fire && io.issue.bits(i).fire && !flush
     val commitValid = rob.io.commit.fire && rob.io.commit.bits(i).fire && !flushed
+
+    ecalls(i) := commitValid && rob.io.commit.bits(i).bits.wb === WB.ECL
 
     // Connect register map table
     regMap.io.read(i).rs1 := io.read(i).rs1

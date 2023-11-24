@@ -10,6 +10,7 @@ import utility.Constants._
 
 class MusvitCoreIO(config: MusvitConfig) extends Bundle {
   val read = Flipped(new MusvitROMIO(config))
+  val exit = Output(Bool())
 }
 
 class MusvitCore(config: MusvitConfig) extends Module {
@@ -22,6 +23,8 @@ class MusvitCore(config: MusvitConfig) extends Module {
   frontend.io.pc <> backend.io.pc
   frontend.io.flush <> backend.io.flush
   backend.io.mop <> frontend.io.mop
+
+  io.exit := backend.io.exit
 }
 
 object MusvitCore {

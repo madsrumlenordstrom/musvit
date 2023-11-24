@@ -17,6 +17,7 @@ import utility.ValidateData
 class BackendIO(config: MusvitConfig) extends Bundle {
   val pc    = Output(new ProgramCounterWritePort())
   val flush = Output(Bool())
+  val exit  = Output(Bool())
   val mop   = Flipped(Decoupled(new MicroOperationPacket(config)))
   // needs memIO
 }
@@ -25,7 +26,7 @@ class Backend(config: MusvitConfig) extends Module with ControlValues {
   val io = IO(new BackendIO(config))
 
   // Pipeline register
-  val mopReg = RegEnable(io.mop.bits, 0.U.asTypeOf(io.mop.bits), io.mop.fire)
+  val mopReg = RegEnable(io.mop.bits, 0.U.asTypeOf(io.mop.bits), io.mop.fire && !io.flush)
   val mopRegValid = RegInit(false.B)
   
   // Common data busses
@@ -34,6 +35,7 @@ class Backend(config: MusvitConfig) extends Module with ControlValues {
   val oprSup = Module(new OperandSupplier(config))
   io.pc <> oprSup.io.pc
   io.flush <> oprSup.io.flush
+  io.exit := oprSup.io.exit
   oprSup.io.cdb <> VecInit(cdbs)
   
   // Values for issuing
@@ -51,9 +53,10 @@ class Backend(config: MusvitConfig) extends Module with ControlValues {
   val canIssue      = Seq.fill(config.fetchWidth)(Wire(Bool()))
   val hasIssued     = Seq.fill(config.fetchWidth)(Reg(Bool()))
   val allIssued     = (VecInit(canIssue).asUInt | VecInit(hasIssued).asUInt).andR || !mopRegValid
+  val isEcall       = Seq.fill(config.fetchWidth)(Wire(Bool()))
   io.mop.ready := allIssued
 
-  mopRegValid := Mux(io.mop.fire, true.B, !allIssued)
+  mopRegValid := Mux(io.mop.fire, true.B, !allIssued) && !io.flush
 
   // Must be in same order as in fusArbs
   val fus: Seq[Seq[FunctionalUnit]] = Seq(
@@ -89,24 +92,31 @@ class Backend(config: MusvitConfig) extends Module with ControlValues {
   }
 
   // Issue instructions to ROB
-  //oprSup.io.issue.valid := mopRegValid && (VecInit(canIssue).asUInt & VecInit(hasIssued).asUInt.unary_~).asBools.reduce(_ || _)
-  oprSup.io.issue.valid := mopRegValid && canIssue.zip(hasIssued).map{ case (can, has) => can || !has}.reduce(_ || _)
+  oprSup.io.issue.valid := mopRegValid && canIssue.reduce(_ || _) && !io.flush
 
   // Issue 
   for (i <- 0 until config.fetchWidth) {
+    // Check is instruction is ECALL since they must be issued in order one at a time
+    isEcall(i) := mopReg.microOps(i).ctrl.valid && mopReg.microOps(i).ctrl.wb === WB.ECL && !hasIssued(i)
+    //val prevEcall = if (i == 0) false.B else isEcall.dropRight(config.fetchWidth - i).reduce(_ || _)
+
     // Check if instruction has funcitonal unit assigned or previously assigned one
     fuReady(i) := fusArbs.map(_.io.in(i).fire).reduce(_ || _) || hasIssued(i)
 
     // Check if other instructions in packet can not issue
-    canIssue(i) := mopRegValid && fuReady.dropRight(config.fetchWidth - 1 - i).reduce(_ && _) // && oprSup.io.issue.ready TODO
+    val prevEcall   = (if (i == 0) false.B else isEcall.dropRight(config.fetchWidth - i).reduce(_ || _))
+    val prevIssued  = (if (i == 0) false.B else canIssue.dropRight(config.fetchWidth - i).reduce(_ || _))
+    val eCallCon    = (!prevEcall && !prevIssued) || (!isEcall(i) && !prevEcall)
+    canIssue(i) := mopRegValid && oprSup.io.issue.ready && fuReady.dropRight(config.fetchWidth - 1 - i).reduce(_ && _) && !hasIssued(i) && eCallCon && !io.flush
 
     // Mark instructions as issued if not all instructions can issue
-    hasIssued(i) := Mux(allIssued, false.B, canIssue(i))
+    hasIssued(i) := Mux(allIssued, false.B, canIssue(i) || hasIssued(i))
+
 
     // Send data to functional units
     for (j <- 0 until fusArbs.length) {
       fusArbs(j).io.in(i).bits := ibs(i)
-      fusArbs(j).io.in(i).valid := mopRegValid && mopReg.microOps(i).ctrl.valid && mopReg.microOps(i).ctrl.fu === fus(j).head.fuType && !hasIssued(i)
+      fusArbs(j).io.in(i).valid := mopRegValid && mopReg.microOps(i).ctrl.valid && mopReg.microOps(i).ctrl.fu === fus(j).head.fuType && !hasIssued(i) && eCallCon && !io.flush
     }
 
     // Immediate generation
@@ -119,7 +129,7 @@ class Backend(config: MusvitConfig) extends Module with ControlValues {
     oprSup.io.issue.bits(i).bits.target := 0.U // Maybe change to DontCare??
     oprSup.io.issue.bits(i).bits.rd := rds(i)
     oprSup.io.issue.bits(i).bits.wb := mopReg.microOps(i).ctrl.wb
-    oprSup.io.issue.bits(i).valid := mopReg.microOps(i).ctrl.valid && canIssue(i) && !hasIssued(i)
+    oprSup.io.issue.bits(i).valid := mopReg.microOps(i).ctrl.valid && canIssue(i) && eCallCon && !io.flush
     oprSup.io.read(i).rs1 := rs1s(i)
     oprSup.io.read(i).rs2 := rs2s(i)
 
