@@ -2,6 +2,7 @@ package utility
 
 import chisel3._
 import chisel3.util._
+
 import java.nio.file.Files
 import java.io.File
 import Constants._
@@ -71,11 +72,19 @@ object DecoupledToValid {
 }
 
 object ValidateData {
-  def apply[T <: Data](data: T): Valid[T] = {
+  def apply[T <: Data](data: T, valid: Bool): Valid[T] = {
     val d = Wire(Valid(chiselTypeOf(data)))
-    d.valid := true.B
     d.bits := data
+    d.valid := valid
     d
+  }
+
+  def apply[T <: Data](data: T, valid: Boolean): Valid[T] = {
+    apply(data, valid.B)
+  }
+
+  def apply[T <: Data](data: T): Valid[T] = {
+    apply(data, true.B)
   }
 }
 

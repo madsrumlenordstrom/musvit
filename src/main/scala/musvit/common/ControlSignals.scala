@@ -129,11 +129,10 @@ trait ControlValues {
   }
   
   object OP2 {
-    def RS2:  BitPat = BitPat("b00")
-    def IMM:  BitPat = BitPat("b01")
-    def FOUR: BitPat = BitPat("b10")
+    def RS2:  BitPat = BitPat("b0")
+    def IMM:  BitPat = BitPat("b1")
 
-    def X:    BitPat = BitPat("b??")
+    def X:    BitPat = BitPat("b?")
   }
 }
 

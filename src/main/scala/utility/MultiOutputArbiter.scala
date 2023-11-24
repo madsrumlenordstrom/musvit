@@ -42,7 +42,10 @@ class FunctionalUnitArbiter[T <: Data](private val gen: T, val inputs: Int, val 
       val hasFired = if (i == 0) false.B else arbs.map(_.io.in(j).fire).dropRight(outputs - i).reduce(_ || _)
       arbs(i).io.in(j).bits <> io.in(j).bits
       arbs(i).io.in(j).valid := io.in(j).valid && !hasFired
-      io.in(j).ready := arbs(i).io.in(j).ready
     }
+  }
+
+  for (i <- 0 until inputs) {
+    io.in(i).ready := arbs.map(_.io.in(i).ready).reduce(_ || _)
   }
 }

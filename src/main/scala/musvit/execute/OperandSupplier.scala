@@ -123,7 +123,7 @@ class OperandSupplier(config: MusvitConfig) extends Module with ControlValues {
           io.issue.bits(j).fire
       ) {
         io.read(i).src1.data.valid := false.B
-        io.read(i).src1.robTag := regMap.io.read(j).robTag1.bits
+        io.read(i).src1.robTag := rob.io.freeTags(j)
       }
 
       when(
@@ -133,7 +133,7 @@ class OperandSupplier(config: MusvitConfig) extends Module with ControlValues {
           io.issue.bits(j).fire
       ) {
         io.read(i).src2.data.valid := false.B
-        io.read(i).src2.robTag := regMap.io.read(j).robTag2.bits
+        io.read(i).src2.robTag := rob.io.freeTags(j)
       }
     }
   }

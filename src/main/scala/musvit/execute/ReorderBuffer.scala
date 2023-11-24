@@ -38,7 +38,7 @@ class ReorderBuffer(config: MusvitConfig) extends Module with ControlValues {
 
   val rob = Reg(Vec(entries, Vec(config.fetchWidth, Valid(CommitBus(config)))))
   val robAddrWidth = ROBTag(config).getWidth - log2Ceil(config.fetchWidth)
-  val readyReg = Reg(Vec(entries, Vec(config.fetchWidth, Bool())))
+  val readyReg = RegInit(VecInit.fill(entries, config.fetchWidth)(false.B))
   val dequeueReady = readyReg(deq_ptr.value).reduce(_ && _)
 
   def robTagToRobEntry(robTag: UInt): CommitBus = {
