@@ -16,7 +16,7 @@ import musvit.common.ControlValues
 
 class OperandSupplierTester extends AnyFlatSpec with ChiselScalatestTester with ControlValues {
   val config = MusvitConfig(
-    fetchWidth = 4,
+    issueWidth = 4,
     robEntries = 32,
   )
 
@@ -81,15 +81,15 @@ class OperandSupplierTester extends AnyFlatSpec with ChiselScalatestTester with 
       }
 
       // Issue      
-      for (i <- 0 until config.robEntries / config.fetchWidth) {
-        val data = Seq.tabulate(config.fetchWidth)(j => commitBus(Random.nextInt(), Random.nextInt(), (config.fetchWidth * i) + j, WB.REG.value.toInt, false, true))
+      for (i <- 0 until config.robEntries / config.issueWidth) {
+        val data = Seq.tabulate(config.issueWidth)(j => commitBus(Random.nextInt(), Random.nextInt(), (config.issueWidth * i) + j, WB.REG.value.toInt, false, true))
         issue(data)
         issues.enqueue(data)
       }
 
       // Read operands
       for (i <- 0 until config.robEntries) {
-        val data = if (i == 0) 0 else issues(i / config.fetchWidth)(i % config.fetchWidth).bits.data.litValue.toInt
+        val data = if (i == 0) 0 else issues(i / config.issueWidth)(i % config.issueWidth).bits.data.litValue.toInt
         val valid = if(i == 0) true else false
         val source = issueSource(i, data, valid)
         read(i, source)
@@ -106,9 +106,9 @@ class OperandSupplierTester extends AnyFlatSpec with ChiselScalatestTester with 
 
 
       // Test branch
-      val nonBranched = Seq.fill(config.fetchWidth)(commitBus(0, 0, 0, WB.PC.value.toInt, false, true))
+      val nonBranched = Seq.fill(config.issueWidth)(commitBus(0, 0, 0, WB.PC.value.toInt, false, true))
       issue(nonBranched)
-      for (i <- 0 until config.fetchWidth) {
+      for (i <- 0 until config.issueWidth) {
         dut.io.pc.en.expect(false.B)
         write(i, i % 2, writeTargets(i))
       }
@@ -117,9 +117,9 @@ class OperandSupplierTester extends AnyFlatSpec with ChiselScalatestTester with 
       dut.clock.step(1)
       dut.io.pc.en.expect(false.B)
 
-      val branched = Seq.fill(config.fetchWidth)(commitBus(0, 0, 0, WB.PC.value.toInt, true, true))
+      val branched = Seq.fill(config.issueWidth)(commitBus(0, 0, 0, WB.PC.value.toInt, true, true))
       issue(branched)
-      for (i <- 0 until config.fetchWidth) {
+      for (i <- 0 until config.issueWidth) {
         dut.io.pc.en.expect(false.B)
         write(i, i % 2, writeTargets(i))
       }

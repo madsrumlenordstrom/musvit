@@ -30,7 +30,7 @@ class ROMTester extends AnyFlatSpec with ChiselScalatestTester {
 }
 
 class MusvitROMTester extends AnyFlatSpec with ChiselScalatestTester {
-  val config = MusvitConfig(fetchWidth = 2, romFile = "random", romSize = 0x2000)
+  val config = MusvitConfig(issueWidth = 2, romFile = "random", romSize = 0x2000)
   
   "MusvitROM" should "pass" in {
     test(new MusvitROM(config)).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
@@ -38,12 +38,12 @@ class MusvitROMTester extends AnyFlatSpec with ChiselScalatestTester {
 
       dut.io.data.ready.poke(true.B)
 
-      for (i <- 0 until (dut.contents.length - config.fetchWidth)) {
+      for (i <- 0 until (dut.contents.length - config.issueWidth)) {
 
         val addr = (i * BYTES_PER_INST).asUInt(ADDR_WIDTH.W)
         dut.io.addr.poke(addr)
         
-        for (j <- 0 until config.fetchWidth) {
+        for (j <- 0 until config.issueWidth) {
           dut.io.data.bits(j).expect(dut.contents(i + j))
         }
         

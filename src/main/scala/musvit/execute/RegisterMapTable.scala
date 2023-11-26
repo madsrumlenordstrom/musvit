@@ -25,9 +25,9 @@ class RegisterMapTableClearPort(config: MusvitConfig) extends Bundle {
 }
 
 class RegisterMapTableIO(config: MusvitConfig) extends Bundle {
-  val read = Vec(config.fetchWidth, new RegisterMapTableReadPort(config))
-  val write = Vec(config.fetchWidth, new RegisterMapTableWritePort(config))
-  val clear = Vec(config.fetchWidth, new RegisterMapTableClearPort(config))
+  val read = Vec(config.issueWidth, new RegisterMapTableReadPort(config))
+  val write = Vec(config.issueWidth, new RegisterMapTableWritePort(config))
+  val clear = Vec(config.issueWidth, new RegisterMapTableClearPort(config))
   val flush = Input(Bool())
 }
 
@@ -36,7 +36,7 @@ class RegisterMapTable(config: MusvitConfig) extends Module {
 
   val regMap = RegInit(0.U.asTypeOf(Vec(NUM_OF_REGS, Valid(ROBTag(config)))))
 
-  for (i <- 0 until config.fetchWidth) {
+  for (i <- 0 until config.issueWidth) {
     // Read
     io.read(i).robTag1 := regMap(io.read(i).rs1)
     io.read(i).robTag2 := regMap(io.read(i).rs2)

@@ -9,7 +9,7 @@ import utility.Constants._
 
 class ReservationStationIO(config: MusvitConfig) extends Bundle with ControlValues {
   val ib = Flipped(Decoupled(IssueBus(config)))                           // Issue bus
-  val cdb = Flipped(Vec(config.fetchWidth, Valid(CommonDataBus(config)))) // Commmon data bus for monitor
+  val cdb = Flipped(Vec(config.issueWidth, Valid(CommonDataBus(config)))) // Commmon data bus for monitor
   val flush = Input(Bool())
 }
 

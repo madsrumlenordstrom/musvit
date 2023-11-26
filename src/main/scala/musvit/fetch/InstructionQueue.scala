@@ -15,7 +15,7 @@ class InstructionQueueIO(config: MusvitConfig) extends Bundle {
 class InstructionQueue(config: MusvitConfig) extends Module {
   val io = IO(new InstructionQueueIO(config))
 
-  val queue = Module(new Queue(new FetchPacket(config), config.instQueueEntries / config.fetchWidth, hasFlush = true))
+  val queue = Module(new Queue(new FetchPacket(config), config.instQueueEntries / config.issueWidth, hasFlush = true))
 
   queue.io.enq <> io.in
   io.out <> queue.io.deq

@@ -13,8 +13,8 @@ class FrontendTester extends AnyFlatSpec with ChiselScalatestTester {
   // Test configuration
   val testFile = "random"
   val words = fileToUInts(testFile, INST_WIDTH)
-  val fetchWidth = 2
-  val config = MusvitConfig(fetchWidth = fetchWidth, instQueueEntries = words.length)
+  val issueWidth = 2
+  val config = MusvitConfig(issueWidth = issueWidth, instQueueEntries = words.length)
 
   "Frontend" should "pass" in {
     test(new Frontend(config)).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
@@ -44,19 +44,19 @@ class FrontendTester extends AnyFlatSpec with ChiselScalatestTester {
       }
 
       // Issue instructions
-      for (i <- 0 until words.length / config.fetchWidth) {
+      for (i <- 0 until words.length / config.issueWidth) {
         while (!dut.io.read.data.ready.peekBoolean()) {
           dut.clock.step(1)
         }
         val addr = dut.io.read.addr.peekInt().toInt / 4
-        val insts = Seq.tabulate(config.fetchWidth)( (j) => words(addr + j))
+        val insts = Seq.tabulate(config.issueWidth)( (j) => words(addr + j))
         issueInstructions(insts)
         issues.enqueue(insts)
         dut.clock.step(1)
       }
 
       // Read
-      for (i <- 0 until words.length / config.fetchWidth) {
+      for (i <- 0 until words.length / config.issueWidth) {
         readInstructions(issues.dequeue())
       }
     }

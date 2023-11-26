@@ -11,13 +11,14 @@ import utility.Functions._
 
 class MusvitCoreTester extends AnyFlatSpec with ChiselScalatestTester {
   // Test configuration
-  val fetchWidth = 2
+  val issueWidth = 2
   val nop = 0x13.U(WORD_WIDTH.W)
-  val testFile = "test.bin"
+  //val testFile = "test.bin"
+  val testFile = "sw/build/prime.bin"
   val wordsLength = fileToUInts(testFile, INST_WIDTH).length
-  val paddings = if (wordsLength % fetchWidth == 0) 0 else wordsLength + (fetchWidth - (wordsLength % fetchWidth))
+  val paddings = if (wordsLength % issueWidth == 0) 0 else wordsLength + (issueWidth - (wordsLength % issueWidth))
   val words = fileToUInts(testFile, INST_WIDTH).padTo(paddings, nop)
-  val config = MusvitConfig(fetchWidth = fetchWidth, instQueueEntries = words.length, aluNum = 2)
+  val config = MusvitConfig(issueWidth = issueWidth, instQueueEntries = words.length, aluNum = 2)
   
   var steps = 0
   val maxSteps = 1000
@@ -47,7 +48,7 @@ class MusvitCoreTester extends AnyFlatSpec with ChiselScalatestTester {
           step(dut.clock, 1)
         } else {
           val addr = dut.io.read.addr.peekInt().toInt / 4
-          val insts = Seq.tabulate(config.fetchWidth)( (j) => words((addr + j) % words.length))
+          val insts = Seq.tabulate(config.issueWidth)( (j) => words((addr + j) % words.length))
           issueInstructions(insts)
           issues.enqueue(insts)
         }

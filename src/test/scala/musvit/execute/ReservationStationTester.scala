@@ -39,7 +39,7 @@ class ReservationStationTester extends FunctionalUnitTester {
           if (j == data.src2.robTag.litValue && !dut.debug.bits.src2.data.valid.peekBoolean()) {
             expected2 = newData
           }
-          writeCDB(dut, j, newData, Random.nextInt(config.fetchWidth))
+          writeCDB(dut, j, newData, Random.nextInt(config.issueWidth))
           j += 1
         }
         // Check output

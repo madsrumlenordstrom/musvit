@@ -10,8 +10,8 @@ import memory.MusvitROMIO
 import utility.Constants._
 
 class FetchPacket(config: MusvitConfig) extends Bundle {
-  val insts = Vec(config.fetchWidth, UInt(INST_WIDTH.W))
-  val branched = Vec(config.fetchWidth, Bool())
+  val insts = Vec(config.issueWidth, UInt(INST_WIDTH.W))
+  val branched = Vec(config.issueWidth, Bool())
   val pc = UInt(ADDR_WIDTH.W)
 }
 
@@ -22,7 +22,7 @@ class MicroOperation(config: MusvitConfig) extends Bundle {
 }
 
 class MicroOperationPacket(config: MusvitConfig) extends Bundle {
-  val microOps = Vec(config.fetchWidth, new MicroOperation(config))
+  val microOps = Vec(config.issueWidth, new MicroOperation(config))
   val pc  = UInt(ADDR_WIDTH.W)
 }
 
@@ -50,7 +50,7 @@ class Frontend(config: MusvitConfig) extends Module {
   fp.valid := io.read.data.valid && !io.flush
   fp.bits.insts <> io.read.data.bits
   fp.bits.pc := pc.io.pc
-  fp.bits.branched := VecInit(Seq.fill(config.fetchWidth)(false.B)) // TODO
+  fp.bits.branched := VecInit(Seq.fill(config.issueWidth)(false.B)) // TODO
 
   // Instruction queue
   val iq = Module(new InstructionQueue(config))
@@ -58,8 +58,8 @@ class Frontend(config: MusvitConfig) extends Module {
   iq.io.flush := io.flush
 
   // Decode instructions
-  val decoders = Seq.fill(config.fetchWidth)(Module(new Decode(config)))
-  for (i <- 0 until config.fetchWidth) {
+  val decoders = Seq.fill(config.issueWidth)(Module(new Decode(config)))
+  for (i <- 0 until config.issueWidth) {
     decoders(i).io.inst := iq.io.out.bits.insts(i)
     io.mop.bits.microOps(i).ctrl := decoders(i).io.ctrl
     io.mop.bits.microOps(i).branched := iq.io.out.bits.branched(i)

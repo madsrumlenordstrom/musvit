@@ -16,7 +16,7 @@ import utility.TestingFunctions._
 
 class ReorderBufferTester extends AnyFlatSpec with ChiselScalatestTester with ControlValues {
   val config = MusvitConfig(
-    fetchWidth = 2,
+    issueWidth = 2,
     robEntries = 16,
   )
 
@@ -78,7 +78,7 @@ class ReorderBufferTester extends AnyFlatSpec with ChiselScalatestTester with Co
 
       // Issue      
       while (dut.io.issue.ready.peekBoolean()) {
-        val data = Seq.fill(config.fetchWidth)(reorderBufferEntry(Random.nextInt(), Random.nextInt(), Random.nextInt(bitWidthToUIntMax(dut.io.issue.bits.head.bits.rd.getWidth).toInt + 1), Random.nextInt(bitWidthToUIntMax(dut.io.issue.bits.head.bits.wb.getWidth).toInt + 1), Random.nextBoolean(), Random.nextBoolean()))
+        val data = Seq.fill(config.issueWidth)(reorderBufferEntry(Random.nextInt(), Random.nextInt(), Random.nextInt(bitWidthToUIntMax(dut.io.issue.bits.head.bits.rd.getWidth).toInt + 1), Random.nextInt(bitWidthToUIntMax(dut.io.issue.bits.head.bits.wb.getWidth).toInt + 1), Random.nextBoolean(), Random.nextBoolean()))
         issue(data)
         issues.enqueue(data)
       }
@@ -87,7 +87,7 @@ class ReorderBufferTester extends AnyFlatSpec with ChiselScalatestTester with Co
       
       // Read operands
       for (i <- 0 until config.robEntries) {
-        val issue = issues(i / config.fetchWidth)(i % config.fetchWidth)
+        val issue = issues(i / config.issueWidth)(i % config.issueWidth)
         val valid = issue.valid.litToBoolean.unary_!
         read(i, issue.bits.data.litValue.toInt, valid = valid)
         dut.clock.step(1)
@@ -95,7 +95,7 @@ class ReorderBufferTester extends AnyFlatSpec with ChiselScalatestTester with Co
       
       // Write operands
       for (i <- 0 until config.robEntries) {
-        val issue = issues(i / config.fetchWidth)(i % config.fetchWidth)
+        val issue = issues(i / config.issueWidth)(i % config.issueWidth)
         write(i, writeData(i), writeTargets(i))
         read(i, writeData(i), true)
         dut.clock.step(1)
@@ -109,9 +109,9 @@ class ReorderBufferTester extends AnyFlatSpec with ChiselScalatestTester with Co
         val expected = chiselTypeOf(dut.io.commit.bits).zipWithIndex.map{
           case (cb, i) =>
             cb.Lit(
-              _.bits.data -> intToUInt(writeData((config.fetchWidth * j) + i)),
+              _.bits.data -> intToUInt(writeData((config.issueWidth * j) + i)),
               _.bits.rd -> issue(i).bits.rd,
-              _.bits.target -> intToUInt(writeTargets((config.fetchWidth * j) + i)),
+              _.bits.target -> intToUInt(writeTargets((config.issueWidth * j) + i)),
               _.bits.wb -> issue(i).bits.wb,
               _.bits.branched -> issue(i).bits.branched,
               _.valid -> issue(i).valid,
@@ -124,7 +124,7 @@ class ReorderBufferTester extends AnyFlatSpec with ChiselScalatestTester with Co
 
       // Issue      
       while (dut.io.issue.ready.peekBoolean()) {
-        val data = Seq.fill(config.fetchWidth)(reorderBufferEntry(Random.nextInt(), Random.nextInt(), Random.nextInt(bitWidthToUIntMax(dut.io.issue.bits.head.bits.rd.getWidth).toInt + 1), Random.nextInt(bitWidthToUIntMax(dut.io.issue.bits.head.bits.wb.getWidth).toInt + 1), Random.nextBoolean(), Random.nextBoolean()))
+        val data = Seq.fill(config.issueWidth)(reorderBufferEntry(Random.nextInt(), Random.nextInt(), Random.nextInt(bitWidthToUIntMax(dut.io.issue.bits.head.bits.rd.getWidth).toInt + 1), Random.nextInt(bitWidthToUIntMax(dut.io.issue.bits.head.bits.wb.getWidth).toInt + 1), Random.nextBoolean(), Random.nextBoolean()))
         issue(data)
         issues.enqueue(data)
       }

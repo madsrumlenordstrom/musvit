@@ -16,18 +16,18 @@ class ReorderBufferReadPort(config: MusvitConfig) extends Bundle {
 
 class ReorderBufferIO(config: MusvitConfig) extends Bundle {
   val flush       = Input(Bool())
-  val issue       = Flipped(Decoupled(Vec(config.fetchWidth, Valid(CommitBus(config)))))
-  val commit      = Decoupled(Vec(config.fetchWidth, Valid(CommitBus(config))))
-  val read        = Vec(config.fetchWidth, new ReorderBufferReadPort(config))
-  val cdb         = Vec(config.fetchWidth, Flipped(Valid(CommonDataBus(config))))
-  val issueTags   = Output(Vec(config.fetchWidth, ROBTag(config)))
-  val commitTags  = Output(Vec(config.fetchWidth, ROBTag(config)))
+  val issue       = Flipped(Decoupled(Vec(config.issueWidth, Valid(CommitBus(config)))))
+  val commit      = Decoupled(Vec(config.issueWidth, Valid(CommitBus(config))))
+  val read        = Vec(config.issueWidth, new ReorderBufferReadPort(config))
+  val cdb         = Vec(config.issueWidth, Flipped(Valid(CommonDataBus(config))))
+  val issueTags   = Output(Vec(config.issueWidth, ROBTag(config)))
+  val commitTags  = Output(Vec(config.issueWidth, ROBTag(config)))
 }
 
 class ReorderBuffer(config: MusvitConfig) extends Module with ControlValues {
   val io = IO(new ReorderBufferIO(config))
 
-  val entries = config.robEntries / config.fetchWidth
+  val entries = config.robEntries / config.issueWidth
   val enq_ptr = Counter(entries)
   val deq_ptr = Counter(entries)
   val maybe_full = RegInit(false.B)
@@ -37,9 +37,9 @@ class ReorderBuffer(config: MusvitConfig) extends Module with ControlValues {
   val do_enq = WireDefault(io.issue.fire)
   val do_deq = WireDefault(io.commit.fire)
 
-  val rob = Reg(Vec(entries, Vec(config.fetchWidth, Valid(CommitBus(config)))))
-  val robAddrWidth = ROBTag(config).getWidth - log2Ceil(config.fetchWidth)
-  val readyReg = RegInit(VecInit.fill(entries, config.fetchWidth)(false.B))
+  val rob = Reg(Vec(entries, Vec(config.issueWidth, Valid(CommitBus(config)))))
+  val robAddrWidth = ROBTag(config).getWidth - log2Ceil(config.issueWidth)
+  val readyReg = RegInit(VecInit.fill(entries, config.issueWidth)(false.B))
   val dequeueReady = readyReg(deq_ptr.value).reduce(_ && _)
 
   def robTagToRobEntry(robTag: UInt): CommitBus = {
@@ -54,7 +54,7 @@ class ReorderBuffer(config: MusvitConfig) extends Module with ControlValues {
 
   when(do_enq) {
     rob(enq_ptr.value) := io.issue.bits
-    readyReg(enq_ptr.value) := VecInit.tabulate(config.fetchWidth)( (i) => io.issue.bits(i).valid.unary_! )
+    readyReg(enq_ptr.value) := VecInit.tabulate(config.issueWidth)( (i) => io.issue.bits(i).valid.unary_! )
     enq_ptr.inc()
   }
   when(do_deq) {

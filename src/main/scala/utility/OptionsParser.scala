@@ -39,7 +39,7 @@ object OptionsParser {
         opt[Int]('w', "fetch-width")
           .text("Number of instruction fetched every memory access")
           .valueName("<value>")
-          .action((value, config) => config.copy(musvitConfig = config.musvitConfig.copy(fetchWidth = value))),
+          .action((value, config) => config.copy(musvitConfig = config.musvitConfig.copy(issueWidth = value))),
 
         opt[String]('f', "firrtl-opts")
           .optional()

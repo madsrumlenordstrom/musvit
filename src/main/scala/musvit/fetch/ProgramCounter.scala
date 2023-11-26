@@ -23,7 +23,7 @@ class ProgramCounter(config: MusvitConfig) extends Module {
 
   val pcReg = RegEnable(nextPC, config.resetPC.U, io.enable || io.write.en)
   
-  nextPC := Mux(io.write.en, io.write.data, pcReg + (config.fetchWidth * BYTES_PER_INST).U)
+  nextPC := Mux(io.write.en, io.write.data, pcReg + (config.issueWidth * BYTES_PER_INST).U)
 
   io.pc := pcReg
 }
