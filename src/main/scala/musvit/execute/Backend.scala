@@ -19,7 +19,6 @@ class BackendIO(config: MusvitConfig) extends Bundle {
   val flush = Output(Bool())
   val exit  = Output(Bool())
   val mop   = Flipped(Decoupled(new MicroOperationPacket(config)))
-  // needs memIO
 }
 
 class Backend(config: MusvitConfig) extends Module with ControlValues {
@@ -30,7 +29,7 @@ class Backend(config: MusvitConfig) extends Module with ControlValues {
   val mopRegValid = RegInit(false.B)
   
   // Common data busses
-  val cdbs = Seq.fill(config.fetchWidth)(Wire(Valid(CommonDataBus(config))))
+  val cdbs = Seq.fill(config.issueWidth)(Wire(Valid(CommonDataBus(config))))
   
   val oprSup = Module(new OperandSupplier(config))
   io.pc <> oprSup.io.pc
@@ -39,21 +38,22 @@ class Backend(config: MusvitConfig) extends Module with ControlValues {
   oprSup.io.cdb <> VecInit(cdbs)
   
   // Values for issuing
-  val rds   = Seq.tabulate(config.fetchWidth)( (i) => mopReg.microOps(i).inst(RD_MSB, RD_LSB))
-  val rs1s  = Seq.tabulate(config.fetchWidth)( (i) => mopReg.microOps(i).inst(RS1_MSB, RS1_LSB))
-  val rs2s  = Seq.tabulate(config.fetchWidth)( (i) => mopReg.microOps(i).inst(RS2_MSB, RS2_LSB))
-  val pcs   = Seq.tabulate(config.fetchWidth)( (i) => mopReg.pc + (i * 4).U)
-  val ibs   = Seq.fill(config.fetchWidth)(Wire(IssueBus(config)))
+  val rds   = Seq.tabulate(config.issueWidth)( (i) => mopReg.microOps(i).inst(RD_MSB, RD_LSB))
+  val rs1s  = Seq.tabulate(config.issueWidth)( (i) => mopReg.microOps(i).inst(RS1_MSB, RS1_LSB))
+  val rs2s  = Seq.tabulate(config.issueWidth)( (i) => mopReg.microOps(i).inst(RS2_MSB, RS2_LSB))
+  val pcs   = Seq.tabulate(config.issueWidth)( (i) => mopReg.pc + (i * 4).U)
+  val ibs   = Seq.fill(config.issueWidth)(Wire(IssueBus(config)))
   
   // Immediate modules
-  val immGens = Seq.fill(config.fetchWidth)(Module(new ImmediateGenerator()))
+  val immGens = Seq.fill(config.issueWidth)(Module(new ImmediateGenerator()))
   
   // Some values for keeping track of issuing
-  val fuReady       = Seq.fill(config.fetchWidth)(Wire(Bool()))
-  val canIssue      = Seq.fill(config.fetchWidth)(Wire(Bool()))
-  val hasIssued     = Seq.fill(config.fetchWidth)(Reg(Bool()))
+  val fuReady       = Seq.fill(config.issueWidth)(Wire(Bool()))
+  val canIssue      = Seq.fill(config.issueWidth)(Wire(Bool()))
+  val hasIssued     = Seq.fill(config.issueWidth)(Reg(Bool()))
+  val isEcall       = Seq.fill(config.issueWidth)(Wire(Bool()))
+  val isValid       = Seq.fill(config.issueWidth)(Wire(Bool()))
   val allIssued     = (VecInit(canIssue).asUInt | VecInit(hasIssued).asUInt).andR || !mopRegValid
-  val isEcall       = Seq.fill(config.fetchWidth)(Wire(Bool()))
   io.mop.ready := allIssued
 
   mopRegValid := Mux(io.mop.fire, true.B, !allIssued) && !io.flush
@@ -63,27 +63,27 @@ class Backend(config: MusvitConfig) extends Module with ControlValues {
     Seq.fill(config.aluNum)(Module(new ALU(config))),
     Seq.fill(config.mulNum)(Module(new Multiplier(config))),
     Seq.fill(config.divNum)(Module(new Divider(config))),
-    // Seq.fill(config.lsuNum)(Module(new LSU(config))), TODO
+    //Seq.fill(config.lsuNum)(Module(new LSU(config))),
   )
 
   // Arbiters for functional units (must also be in same order as fus)
   val fusArbs: Seq[FunctionalUnitArbiter[IssueBus]] = Seq(
-    Module(new FunctionalUnitArbiter(IssueBus(config), config.fetchWidth, config.aluNum)),
-    Module(new FunctionalUnitArbiter(IssueBus(config), config.fetchWidth, config.mulNum)),
-    Module(new FunctionalUnitArbiter(IssueBus(config), config.fetchWidth, config.divNum)),
-    //Module(new FunctionalUnitArbiter(IssueBus(config), config.fetchWidth, config.lsuNum)),
+    Module(new FunctionalUnitArbiter(IssueBus(config), config.issueWidth, config.aluNum)),
+    Module(new FunctionalUnitArbiter(IssueBus(config), config.issueWidth, config.mulNum)),
+    Module(new FunctionalUnitArbiter(IssueBus(config), config.issueWidth, config.divNum)),
+    //Module(new FunctionalUnitArbiter(IssueBus(config), config.issueWidth, config.lsuNum)),
   )
 
   // Create CDB arbiter
   val fusSeq = fus.reduce(_ ++ _)
-  val cdbArb = Module(new MultiOutputArbiter(CommonDataBus(config), fusSeq.length, config.fetchWidth))
+  val cdbArb = Module(new MultiOutputArbiter(CommonDataBus(config), fusSeq.length, config.issueWidth))
   for (i <- 0 until fusSeq.length) { cdbArb.io.in(i) <> fusSeq(i).fu.result } // Input
-  for (i <- 0 until config.fetchWidth) { // Output
+  for (i <- 0 until config.issueWidth) { // Output
     cdbs(i) <> DecoupledToValid(cdbArb.io.out(i))
     cdbArb.io.out(i).ready := true.B
   }
 
-
+  // Connect arbiter
   for (i <- 0 until fus.length) {
     for (j <- 0 until fus(i).length) {
       fus(i)(j).rs.flush := oprSup.io.flush
@@ -95,28 +95,29 @@ class Backend(config: MusvitConfig) extends Module with ControlValues {
   oprSup.io.issue.valid := mopRegValid && canIssue.reduce(_ || _) && !io.flush
 
   // Issue 
-  for (i <- 0 until config.fetchWidth) {
-    // Check is instruction is ECALL since they must be issued in order one at a time
-    isEcall(i) := mopReg.microOps(i).ctrl.valid && mopReg.microOps(i).ctrl.wb === WB.ECL && !hasIssued(i)
-    //val prevEcall = if (i == 0) false.B else isEcall.dropRight(config.fetchWidth - i).reduce(_ || _)
+  for (i <- 0 until config.issueWidth) {
+    // Instruction valid condition
+    isValid(i) := mopRegValid && mopReg.microOps(i).ctrl.valid && !hasIssued(i) && !io.flush
+
+    // Check if instruction is ECALL since they must be issued in order one at a time
+    isEcall(i) := isValid(i) && mopReg.microOps(i).ctrl.wb === WB.ECL
 
     // Check if instruction has funcitonal unit assigned or previously assigned one
-    fuReady(i) := fusArbs.map(_.io.in(i).fire).reduce(_ || _) || hasIssued(i)
+    fuReady(i) := fusArbs.map(_.io.in(i).fire).reduce(_ || _)
 
     // Check if other instructions in packet can not issue
-    val prevEcall   = (if (i == 0) false.B else isEcall.dropRight(config.fetchWidth - i).reduce(_ || _))
-    val prevIssued  = (if (i == 0) false.B else canIssue.dropRight(config.fetchWidth - i).reduce(_ || _))
-    val eCallCon    = (!prevEcall && !prevIssued) || (!isEcall(i) && !prevEcall)
-    canIssue(i) := mopRegValid && oprSup.io.issue.ready && fuReady.dropRight(config.fetchWidth - 1 - i).reduce(_ && _) && !hasIssued(i) && eCallCon && !io.flush
+    val prevEcall   = (if (i == 0) false.B else isEcall.dropRight(config.issueWidth - i).reduce(_ || _))
+    val prevIssued  = (if (i == 0) false.B else canIssue.dropRight(config.issueWidth - i).reduce(_ || _))
+    val ecallCon    = (!prevEcall && !prevIssued) || (!isEcall(i) && !prevEcall)
+    canIssue(i) := isValid(i) && fuReady(i) && oprSup.io.issue.ready && ecallCon
 
     // Mark instructions as issued if not all instructions can issue
     hasIssued(i) := Mux(allIssued, false.B, canIssue(i) || hasIssued(i))
 
-
     // Send data to functional units
     for (j <- 0 until fusArbs.length) {
       fusArbs(j).io.in(i).bits := ibs(i)
-      fusArbs(j).io.in(i).valid := mopRegValid && mopReg.microOps(i).ctrl.valid && mopReg.microOps(i).ctrl.fu === fus(j).head.fuType && !hasIssued(i) && eCallCon && !io.flush
+      fusArbs(j).io.in(i).valid := isValid(i) && mopReg.microOps(i).ctrl.fu === fus(j).head.fuType && ecallCon
     }
 
     // Immediate generation
@@ -129,7 +130,7 @@ class Backend(config: MusvitConfig) extends Module with ControlValues {
     oprSup.io.issue.bits(i).bits.target := 0.U // Maybe change to DontCare??
     oprSup.io.issue.bits(i).bits.rd := rds(i)
     oprSup.io.issue.bits(i).bits.wb := mopReg.microOps(i).ctrl.wb
-    oprSup.io.issue.bits(i).valid := mopReg.microOps(i).ctrl.valid && canIssue(i) && eCallCon && !io.flush
+    oprSup.io.issue.bits(i).valid := isValid(i) && ecallCon
     oprSup.io.read(i).rs1 := rs1s(i)
     oprSup.io.read(i).rs2 := rs2s(i)
 

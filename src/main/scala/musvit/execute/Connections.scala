@@ -14,9 +14,9 @@ object ROBTag {
 }
 
 class CommonDataBus(config: MusvitConfig) extends Bundle {
-  val data = UInt(WORD_WIDTH.W)   // Value to write to RF or Mem
-  val target = UInt(ADDR_WIDTH.W) // PC target for branches and jumps
-  val robTag = ROBTag(config)     // Index in ROB
+  val data    = UInt(WORD_WIDTH.W)   // Value to write to RF or Mem
+  val target  = UInt(ADDR_WIDTH.W) // PC target for branches and jumps
+  val robTag  = ROBTag(config)     // Index in ROB
 }
 
 object CommonDataBus {
@@ -26,17 +26,17 @@ object CommonDataBus {
 }
 
 class IssueSource(config: MusvitConfig) extends Bundle {
-  val data = Valid(UInt(WORD_WIDTH.W))
-  val robTag = ROBTag(config)
+  val data    = Valid(UInt(WORD_WIDTH.W))
+  val robTag  = ROBTag(config)
 }
 
 class IssueBus(config: MusvitConfig) extends Bundle with ControlValues {
-  val op = UInt(OP_WIDTH.W)
-  val src1 = new IssueSource(config)
-  val src2 = new IssueSource(config)
-  val robTag = ROBTag(config)
-  val imm = UInt(WORD_WIDTH.W)
-  val pc = UInt(ADDR_WIDTH.W)
+  val op      = UInt(OP_WIDTH.W)
+  val src1    = new IssueSource(config)
+  val src2    = new IssueSource(config)
+  val robTag  = ROBTag(config)
+  val imm     = UInt(WORD_WIDTH.W)
+  val pc      = UInt(ADDR_WIDTH.W)
 }
 
 object IssueBus {

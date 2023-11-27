@@ -19,9 +19,9 @@ class OperandSupplierReadPort(config: MusvitConfig) extends Bundle {
 }
 
 class OperandSupplierIO(config: MusvitConfig) extends Bundle {
-  val issue = Flipped(Decoupled(Vec(config.fetchWidth, Valid(CommitBus(config)))))
-  val read  = Vec(config.fetchWidth, new OperandSupplierReadPort(config))
-  val cdb   = Vec(config.fetchWidth, Flipped(Valid(CommonDataBus(config))))
+  val issue = Flipped(Decoupled(Vec(config.issueWidth, Valid(CommitBus(config)))))
+  val read  = Vec(config.issueWidth, new OperandSupplierReadPort(config))
+  val cdb   = Vec(config.issueWidth, Flipped(Valid(CommonDataBus(config))))
   val pc    = Output(new ProgramCounterWritePort())
   val flush = Output(Bool())
   val exit  = Output(Bool())
@@ -33,10 +33,10 @@ class OperandSupplier(config: MusvitConfig) extends Module with ControlValues {
   val regMap  = Module(new RegisterMapTable(config))
   val rob     = Module(new ReorderBuffer(config))
   val rf      = Module(new RegisterFile(config))
-  val pcArb   = Module(new Arbiter(new ProgramCounterWritePort(), config.fetchWidth))
+  val pcArb   = Module(new Arbiter(new ProgramCounterWritePort(), config.issueWidth))
 
-  val branches  = Seq.fill(config.fetchWidth)(Wire(Bool()))
-  val ecalls    = Seq.fill(config.fetchWidth)(Wire(Bool()))
+  val branches  = Seq.fill(config.issueWidth)(Wire(Bool()))
+  val ecalls    = Seq.fill(config.issueWidth)(Wire(Bool()))
   val flush     = branches.reduce(_ || _) && rob.io.commit.fire
 
   io.flush := flush
@@ -50,7 +50,7 @@ class OperandSupplier(config: MusvitConfig) extends Module with ControlValues {
   rf.io.ecall := ecalls.reduce(_ || _)
   io.exit := rf.io.exit
 
-  for (i <- 0 until config.fetchWidth) {
+  for (i <- 0 until config.issueWidth) {
     // Check branch
     branches(i) := MuxCase(false.B, Seq(
       (rob.io.commit.bits(i).bits.wb === WB.PC)  -> (rob.io.commit.bits(i).bits.branched ^ rob.io.commit.bits(i).bits.data(0)),
@@ -58,7 +58,7 @@ class OperandSupplier(config: MusvitConfig) extends Module with ControlValues {
     ))
 
     // Check if a previous instruction in the commit packet has branched or jumped
-    val flushed = if (i == 0) false.B else branches.dropRight(config.fetchWidth - i).reduce(_ || _)
+    val flushed = if (i == 0) false.B else branches.dropRight(config.issueWidth - i).reduce(_ || _)
 
     // Issue and commit conditions
     val issueValid = io.issue.fire && io.issue.bits(i).fire && !flush

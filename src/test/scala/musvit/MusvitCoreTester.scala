@@ -14,7 +14,7 @@ class MusvitCoreTester extends AnyFlatSpec with ChiselScalatestTester {
   val issueWidth = 2
   val nop = 0x13.U(WORD_WIDTH.W)
   //val testFile = "test.bin"
-  val testFile = "sw/build/prime.bin"
+  val testFile = "test.bin"
   val wordsLength = fileToUInts(testFile, INST_WIDTH).length
   val paddings = if (wordsLength % issueWidth == 0) 0 else wordsLength + (issueWidth - (wordsLength % issueWidth))
   val words = fileToUInts(testFile, INST_WIDTH).padTo(paddings, nop)
