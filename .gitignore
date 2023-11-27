@@ -10,6 +10,12 @@ rtl/
 .bsp/
 config.mk
 metals.sbt
-random
 .scalafmt.conf
-*.drawio
+diagrams/
+programs/
+gtkw/
+random
+*.gtkw
+*.bin
+*.elf
+*.S
