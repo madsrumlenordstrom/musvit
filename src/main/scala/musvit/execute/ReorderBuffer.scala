@@ -18,6 +18,7 @@ class ReorderBufferIO(config: MusvitConfig) extends Bundle {
   val flush       = Input(Bool())
   val issue       = Flipped(Decoupled(Vec(config.issueWidth, Valid(CommitBus(config)))))
   val commit      = Decoupled(Vec(config.issueWidth, Valid(CommitBus(config))))
+  val ready       = Output(Vec(config.issueWidth, Bool()))
   val read        = Vec(config.issueWidth, new ReorderBufferReadPort(config))
   val cdb         = Vec(config.issueWidth, Flipped(Valid(CommonDataBus(config))))
   val issueTags   = Output(Vec(config.issueWidth, ROBTag(config)))
@@ -70,8 +71,9 @@ class ReorderBuffer(config: MusvitConfig) extends Module with ControlValues {
   }
 
   io.issue.ready := !full
-  io.commit.valid := !empty && dequeueReady
+  io.commit.valid := !empty
   io.commit.bits <> rob(deq_ptr.value)
+  io.ready <> readyReg(deq_ptr.value)
 
   for (i <- 0 until io.issueTags.length) {
     io.issueTags(i) := enq_ptr.value ## i.U(log2Ceil(io.issueTags.length).W)

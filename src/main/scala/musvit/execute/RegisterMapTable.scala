@@ -41,14 +41,14 @@ class RegisterMapTable(config: MusvitConfig) extends Module {
     io.read(i).robTag1 := regMap(io.read(i).rs1)
     io.read(i).robTag2 := regMap(io.read(i).rs2)
 
-    // Write
+    // Clear valid bit (used for committing)
+    when (io.clear(i).clear && io.clear(i).robTag === regMap(io.clear(i).rs).bits) { regMap(io.clear(i).rs).valid := false.B }
+    
+    // Write (takes priority over commit)
     when (io.write(i).en) {
       regMap(io.write(i).rs).bits := io.write(i).robTag
       regMap(io.write(i).rs).valid := true.B
     }
-
-    // Clear valid bit (used for committing)
-    when (io.clear(i).clear && io.clear(i).robTag === regMap(io.clear(i).rs).bits) { regMap(io.clear(i).rs).valid := false.B }
   }
 
   // Mark all as invalid on flush

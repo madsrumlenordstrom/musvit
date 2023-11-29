@@ -51,7 +51,6 @@ class Backend(config: MusvitConfig) extends Module with ControlValues {
   val fuReady       = Seq.fill(config.issueWidth)(Wire(Bool()))
   val canIssue      = Seq.fill(config.issueWidth)(Wire(Bool()))
   val hasIssued     = Seq.fill(config.issueWidth)(Reg(Bool()))
-  val isEcall       = Seq.fill(config.issueWidth)(Wire(Bool()))
   val isValid       = Seq.fill(config.issueWidth)(Wire(Bool()))
   val allIssued     = (VecInit(canIssue).asUInt | VecInit(hasIssued).asUInt).andR || !mopRegValid
   io.mop.ready := allIssued
@@ -99,17 +98,11 @@ class Backend(config: MusvitConfig) extends Module with ControlValues {
     // Instruction valid condition
     isValid(i) := mopRegValid && mopReg.microOps(i).ctrl.valid && !hasIssued(i) && !io.flush
 
-    // Check if instruction is ECALL since they must be issued in order one at a time
-    isEcall(i) := isValid(i) && mopReg.microOps(i).ctrl.wb === WB.ECL
-
     // Check if instruction has funcitonal unit assigned or previously assigned one
     fuReady(i) := fusArbs.map(_.io.in(i).fire).reduce(_ || _)
 
-    // Check if other instructions in packet can not issue
-    val prevEcall   = (if (i == 0) false.B else isEcall.dropRight(config.issueWidth - i).reduce(_ || _))
-    val prevIssued  = (if (i == 0) false.B else canIssue.dropRight(config.issueWidth - i).reduce(_ || _))
-    val ecallCon    = (!prevEcall && !prevIssued) || (!isEcall(i) && !prevEcall)
-    canIssue(i) := isValid(i) && fuReady(i) && oprSup.io.issue.ready && ecallCon
+    // Check issue condition
+    canIssue(i) := isValid(i) && fuReady(i) && oprSup.io.issue.ready
 
     // Mark instructions as issued if not all instructions can issue
     hasIssued(i) := Mux(allIssued, false.B, canIssue(i) || hasIssued(i))
@@ -117,7 +110,7 @@ class Backend(config: MusvitConfig) extends Module with ControlValues {
     // Send data to functional units
     for (j <- 0 until fusArbs.length) {
       fusArbs(j).io.in(i).bits := ibs(i)
-      fusArbs(j).io.in(i).valid := isValid(i) && mopReg.microOps(i).ctrl.fu === fus(j).head.fuType && ecallCon
+      fusArbs(j).io.in(i).valid := isValid(i) && mopReg.microOps(i).ctrl.fu === fus(j).head.fuType
     }
 
     // Immediate generation
@@ -130,7 +123,7 @@ class Backend(config: MusvitConfig) extends Module with ControlValues {
     oprSup.io.issue.bits(i).bits.target := 0.U // Maybe change to DontCare??
     oprSup.io.issue.bits(i).bits.rd := rds(i)
     oprSup.io.issue.bits(i).bits.wb := mopReg.microOps(i).ctrl.wb
-    oprSup.io.issue.bits(i).valid := isValid(i) && ecallCon
+    oprSup.io.issue.bits(i).valid := isValid(i) && canIssue(i)
     oprSup.io.read(i).rs1 := rs1s(i)
     oprSup.io.read(i).rs2 := rs2s(i)
 
