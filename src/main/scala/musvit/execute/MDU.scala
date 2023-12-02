@@ -10,7 +10,7 @@ import utility.RisingEdge
 import utility.Negate
 import utility.SignExtend
 
-class Multiplier(config: MusvitConfig, cycles: Int = 4) extends FunctionalUnit(config) {
+class Multiplier(config: MusvitConfig, cycles: Int = 8) extends FunctionalUnit(config) {
 
   override val fuType = FU.MUL.value.U
 
@@ -38,16 +38,15 @@ class Multiplier(config: MusvitConfig, cycles: Int = 4) extends FunctionalUnit(c
   val multiplicant = Mux(signed1, data1.asSInt.abs.asUInt, data1)
   val multiplier = Mux(signed2, data2.asSInt.abs.asUInt, data2)
 
-  val partialSums = Wire(Vec(WORD_WIDTH / cycles, UInt((WORD_WIDTH + (WORD_WIDTH / cycles)).W)))
+  val partialSums = Seq.fill(WORD_WIDTH / cycles)(Wire(UInt((WORD_WIDTH + (WORD_WIDTH / cycles)).W)))
   val data2Vec = VecInit(multiplier.asBools.grouped(WORD_WIDTH / cycles).map(VecInit(_).asUInt).toSeq)
 
   for (i <- 0 until WORD_WIDTH / cycles) {
     partialSums(i) := Mux(data2Vec(counterValue)(i).asBool, multiplicant << i, 0.U)
   }
 
-  val shamtLookUp = VecInit(Seq.tabulate(cycles)( (i) => (i * (WORD_WIDTH / cycles)).U))
-  val reducedSums = (partialSums.reduceTree((a: UInt, b: UInt) => (a + b)) << shamtLookUp(counterValue)).asTypeOf(UInt((2 * WORD_WIDTH).W))
-  resultReg := Mux(counterIsInit, reducedSums, resultReg + reducedSums)
+  val reducedSums = (partialSums.reduce((a: UInt, b: UInt) => (a + b))) ## 0.U((WORD_WIDTH - (WORD_WIDTH / cycles)).W)
+  resultReg := Mux(counterIsInit, reducedSums, (resultReg >> (WORD_WIDTH / cycles)) + reducedSums)
 
   val signedResult = Mux(signReg, Negate(resultReg), resultReg)
 

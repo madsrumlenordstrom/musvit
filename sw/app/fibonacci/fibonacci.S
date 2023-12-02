@@ -4,7 +4,7 @@ main:
     li a0, 0           # Fn
 	li a1, 0           # F0
 	li a2, 1           # F1
-    li a3, 20000       # max
+    li a3, 9999        # max
     li a4, 10000000    # Delay cycles
     li a7, 0           # for printing int
 l0:

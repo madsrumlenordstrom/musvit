@@ -24,17 +24,15 @@ class OperandSupplierTester extends AnyFlatSpec with ChiselScalatestTester with 
     test(new OperandSupplier(config)).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
       dut.clock.setTimeout(0)
 
-      val issues = Queue[Seq[Valid[CommitBus]]]()
+      val issues = Queue[Seq[ReorderBufferIssueFields]]()
       val writeData = Seq.fill(config.robEntries)(Random.nextInt())
       val writeTargets = Seq.fill(config.robEntries)(Random.nextInt())
 
-      def commitBus(data: Int, target: Int, rd: Int, wb: Int, branched: Boolean, valid: Boolean): Valid[CommitBus] = {
-        chiselTypeOf(dut.io.issue.bits.head).Lit(
-          _.bits.data -> intToUInt(data),
-          _.bits.target -> intToUInt(target),
-          _.bits.rd -> intToUInt(rd),
-          _.bits.wb -> intToUInt(wb),
-          _.bits.branched -> branched.B,
+      def issueBus(rd: Int, wb: Int, branched: Boolean, valid: Boolean): ReorderBufferIssueFields = {
+        chiselTypeOf(dut.io.issue.bits.fields.head).Lit(
+          _.rd -> intToUInt(rd),
+          _.wb -> intToUInt(wb),
+          _.branched -> branched.B,
           _.valid -> valid.B,
         )
       }
@@ -47,10 +45,10 @@ class OperandSupplierTester extends AnyFlatSpec with ChiselScalatestTester with 
         )
       }
 
-      def issue(data: Seq[Valid[CommitBus]]): Unit = {
+      def issue(data: Seq[ReorderBufferIssueFields]): Unit = {
         dut.io.issue.valid.poke(true.B)
-        for (i <- 0 until dut.io.issue.bits.length) {
-          dut.io.issue.bits(i).poke(data(i))
+        for (i <- 0 until dut.io.issue.bits.fields.length) {
+          dut.io.issue.bits.fields(i).poke(data(i))
         }
         dut.clock.step(1)
         dut.io.issue.valid.poke(false.B)
@@ -82,16 +80,14 @@ class OperandSupplierTester extends AnyFlatSpec with ChiselScalatestTester with 
 
       // Issue      
       for (i <- 0 until config.robEntries / config.issueWidth) {
-        val data = Seq.tabulate(config.issueWidth)(j => commitBus(Random.nextInt(), Random.nextInt(), (config.issueWidth * i) + j, WB.REG.value.toInt, false, true))
+        val data = Seq.tabulate(config.issueWidth)(j => issueBus((config.issueWidth * i) + j, WB.REG.value.toInt, false, true))
         issue(data)
         issues.enqueue(data)
       }
 
       // Read operands
       for (i <- 0 until config.robEntries) {
-        val data = if (i == 0) 0 else issues(i / config.issueWidth)(i % config.issueWidth).bits.data.litValue.toInt
-        val valid = if(i == 0) true else false
-        val source = issueSource(i, data, valid)
+        val source = issueSource(i, 0, false)
         read(i, source)
         dut.clock.step(1)
       }
@@ -103,28 +99,24 @@ class OperandSupplierTester extends AnyFlatSpec with ChiselScalatestTester with 
         read(i, source)
         dut.clock.step(1)
       }
-
+      dut.clock.step(1)
 
       // Test branch
-      val nonBranched = Seq.fill(config.issueWidth)(commitBus(0, 0, 0, WB.PC.value.toInt, false, true))
+      val nonBranched = Seq.fill(config.issueWidth)(issueBus(0, WB.PC.value.toInt, false, true))
       issue(nonBranched)
+      dut.io.pc.en.expect(false.B)
       for (i <- 0 until config.issueWidth) {
-        dut.io.pc.en.expect(false.B)
         write(i, i % 2, writeTargets(i))
       }
-      dut.io.pc.en.expect(true.B)
-      dut.io.pc.data.expect(intToUInt(writeTargets(1)))
       dut.clock.step(1)
       dut.io.pc.en.expect(false.B)
 
-      val branched = Seq.fill(config.issueWidth)(commitBus(0, 0, 0, WB.PC.value.toInt, true, true))
+      val branched = Seq.fill(config.issueWidth)(issueBus(0, WB.PC.value.toInt, true, true))
       issue(branched)
+      dut.io.pc.en.expect(false.B)
       for (i <- 0 until config.issueWidth) {
-        dut.io.pc.en.expect(false.B)
         write(i, i % 2, writeTargets(i))
       }
-      dut.io.pc.en.expect(true.B)
-      dut.io.pc.data.expect(intToUInt(writeTargets(0)))
       dut.clock.step(1)
       dut.io.pc.en.expect(false.B)
     }

@@ -45,12 +45,32 @@ object IssueBus {
   }
 }
 
-class CommitBus(config: MusvitConfig) extends Bundle with ControlValues {
-  val data      = UInt(WORD_WIDTH.W)      // Value to write to RF or Mem
-  val target    = UInt(ADDR_WIDTH.W)      // PC target for branches and jumps
+class ReorderBufferIssueFields(config: MusvitConfig) extends Bundle with ControlValues {
   val rd        = UInt(REG_ADDR_WIDTH.W)  // Destination register
   val wb        = UInt(WB.X.getWidth.W)   // Writeback types
   val branched  = Bool()                  // Indicates if branch was taken
+  val valid     = Bool()                  // Indicates that issue is valid
+}
+
+class ReorderBufferDataFields(config: MusvitConfig) extends Bundle {
+  val result    = UInt(WORD_WIDTH.W)      // Value to write to RF or Mem
+  val target    = UInt(ADDR_WIDTH.W)      // PC target for branches and jumps
+  val valid     = Bool()                  // Indicates that data is valid
+}
+
+class ReorderBufferIssuePort(config: MusvitConfig) extends Bundle {
+  val fields = Vec(config.issueWidth, new ReorderBufferIssueFields(config))
+  val pc = UInt(ADDR_WIDTH.W)
+}
+
+class ReorderBufferEntry(config: MusvitConfig) extends Bundle {
+  val fields = Vec(config.issueWidth, CommitBus(config))
+  val pc     = UInt(ADDR_WIDTH.W)
+}
+
+class CommitBus(config: MusvitConfig) extends Bundle with ControlValues {
+  val issue = new ReorderBufferIssueFields(config)
+  val data  = new ReorderBufferDataFields(config)
 }
 
 object CommitBus {

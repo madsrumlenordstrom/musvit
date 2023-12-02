@@ -18,6 +18,7 @@ class BackendIO(config: MusvitConfig) extends Bundle {
   val pc    = Output(new ProgramCounterWritePort())
   val flush = Output(Bool())
   val exit  = Output(Bool())
+  val printReg = Output(UInt(WORD_WIDTH.W))
   val mop   = Flipped(Decoupled(new MicroOperationPacket(config)))
 }
 
@@ -35,6 +36,7 @@ class Backend(config: MusvitConfig) extends Module with ControlValues {
   io.pc <> oprSup.io.pc
   io.flush <> oprSup.io.flush
   io.exit := oprSup.io.exit
+  io.printReg := oprSup.io.printReg
   oprSup.io.cdb <> VecInit(cdbs)
   
   // Values for issuing
@@ -92,6 +94,8 @@ class Backend(config: MusvitConfig) extends Module with ControlValues {
 
   // Issue instructions to ROB
   oprSup.io.issue.valid := mopRegValid && canIssue.reduce(_ || _) && !io.flush
+  
+  oprSup.io.issue.bits.pc := mopReg.pc
 
   // Issue 
   for (i <- 0 until config.issueWidth) {
@@ -118,12 +122,10 @@ class Backend(config: MusvitConfig) extends Module with ControlValues {
     immGens(i).io.immType := mopReg.microOps(i).ctrl.immType
 
     // Assign operand supplier values
-    oprSup.io.issue.bits(i).bits.branched := mopReg.microOps(i).branched
-    oprSup.io.issue.bits(i).bits.data := 0.U // Maybe change to DontCare??
-    oprSup.io.issue.bits(i).bits.target := 0.U // Maybe change to DontCare??
-    oprSup.io.issue.bits(i).bits.rd := rds(i)
-    oprSup.io.issue.bits(i).bits.wb := mopReg.microOps(i).ctrl.wb
-    oprSup.io.issue.bits(i).valid := isValid(i) && canIssue(i)
+    oprSup.io.issue.bits.fields(i).branched := mopReg.microOps(i).branched
+    oprSup.io.issue.bits.fields(i).rd := rds(i)
+    oprSup.io.issue.bits.fields(i).wb := mopReg.microOps(i).ctrl.wb
+    oprSup.io.issue.bits.fields(i).valid := isValid(i) && canIssue(i)
     oprSup.io.read(i).rs1 := rs1s(i)
     oprSup.io.read(i).rs2 := rs2s(i)
 

@@ -25,34 +25,32 @@ class ReorderBufferTester extends AnyFlatSpec with ChiselScalatestTester with Co
       dut.clock.setTimeout(0)
       dut.io.flush.poke(false.B)
 
-      val issues = Queue[Seq[Valid[CommitBus]]]()
+      val issues = Queue[Seq[ReorderBufferIssueFields]]()
       val writeData = Seq.fill(config.robEntries)(Random.nextInt())
       val writeTargets = Seq.fill(config.robEntries)(Random.nextInt())
 
-      def reorderBufferEntry(data: Int, target: Int, rd: Int, wb: Int, branched: Boolean, valid: Boolean): Valid[CommitBus] = {
-        chiselTypeOf(dut.io.issue.bits.head).Lit(
-          _.bits.data -> intToUInt(data),
-          _.bits.target -> intToUInt(target),
-          _.bits.rd -> intToUInt(rd),
-          _.bits.wb -> intToUInt(wb),
-          _.bits.branched -> branched.B,
-          _.valid -> valid.B
+      def issueBus(rd: Int, wb: Int, branched: Boolean, valid: Boolean): ReorderBufferIssueFields = {
+        chiselTypeOf(dut.io.issue.bits.fields.head).Lit(
+          _.rd -> intToUInt(rd),
+          _.wb -> intToUInt(wb),
+          _.branched -> branched.B,
+          _.valid -> valid.B,
         )
       }
 
-      def issue(data: Seq[Valid[CommitBus]]): Unit = {
+      def issue(data: Seq[ReorderBufferIssueFields]): Unit = {
         dut.io.issue.valid.poke(true.B)
-        for (i <- 0 until dut.io.issue.bits.length) {
-          dut.io.issue.bits(i).poke(data(i))
+        for (i <- 0 until dut.io.issue.bits.fields.length) {
+          dut.io.issue.bits.fields(i).poke(data(i))
         }
         dut.clock.step(1)
         dut.io.issue.valid.poke(false.B)
       }
 
-      def commit(expect: Seq[Valid[CommitBus]]): Unit = {
+      def commit(expect: Seq[CommitBus]): Unit = {
         dut.io.commit.ready.poke(true.B)
-        for (i <- 0 until dut.io.commit.bits.length) {
-          dut.io.commit.bits(i).expect(expect(i))
+        for (i <- 0 until expect.length) {
+          dut.io.commit.bits.fields(i).expect(expect(i))
         }
         dut.clock.step(1)
         dut.io.commit.ready.poke(false.B)
@@ -60,11 +58,13 @@ class ReorderBufferTester extends AnyFlatSpec with ChiselScalatestTester with Co
 
       def read(robTag: Int, expect: Int, valid: Boolean): Unit = {
         dut.io.read(0).robTag1.poke(intToUInt(robTag))
-        dut.io.read(0).data1.bits.expect(intToUInt(expect))
-        dut.io.read(0).data1.valid.expect(valid.B)
         dut.io.read(0).robTag2.poke(intToUInt(robTag))
-        dut.io.read(0).data2.bits.expect(intToUInt(expect))
+        dut.io.read(0).data1.valid.expect(valid.B)
         dut.io.read(0).data2.valid.expect(valid.B)
+        if (valid) {
+          dut.io.read(0).data1.bits.expect(intToUInt(expect))
+          dut.io.read(0).data1.bits.expect(intToUInt(expect))
+        }
       }
 
       def write(robTag: Int, data: Int, target: Int): Unit = {
@@ -78,7 +78,7 @@ class ReorderBufferTester extends AnyFlatSpec with ChiselScalatestTester with Co
 
       // Issue      
       while (dut.io.issue.ready.peekBoolean()) {
-        val data = Seq.fill(config.issueWidth)(reorderBufferEntry(Random.nextInt(), Random.nextInt(), Random.nextInt(bitWidthToUIntMax(dut.io.issue.bits.head.bits.rd.getWidth).toInt + 1), Random.nextInt(bitWidthToUIntMax(dut.io.issue.bits.head.bits.wb.getWidth).toInt + 1), Random.nextBoolean(), Random.nextBoolean()))
+        val data = Seq.fill(config.issueWidth)(issueBus(Random.nextInt(bitWidthToUIntMax(dut.io.issue.bits.fields.head.rd.getWidth).toInt + 1), Random.nextInt(bitWidthToUIntMax(dut.io.issue.bits.fields.head.wb.getWidth).toInt + 1), Random.nextBoolean(), Random.nextBoolean()))
         issue(data)
         issues.enqueue(data)
       }
@@ -87,15 +87,12 @@ class ReorderBufferTester extends AnyFlatSpec with ChiselScalatestTester with Co
       
       // Read operands
       for (i <- 0 until config.robEntries) {
-        val issue = issues(i / config.issueWidth)(i % config.issueWidth)
-        val valid = issue.valid.litToBoolean.unary_!
-        read(i, issue.bits.data.litValue.toInt, valid = valid)
+        read(i, 0, false)
         dut.clock.step(1)
       }
       
       // Write operands
       for (i <- 0 until config.robEntries) {
-        val issue = issues(i / config.issueWidth)(i % config.issueWidth)
         write(i, writeData(i), writeTargets(i))
         read(i, writeData(i), true)
         dut.clock.step(1)
@@ -106,15 +103,16 @@ class ReorderBufferTester extends AnyFlatSpec with ChiselScalatestTester with Co
       // Commit
       for (j <- 0 until issues.length) {
         val issue = issues.dequeue().toSeq
-        val expected = chiselTypeOf(dut.io.commit.bits).zipWithIndex.map{
+        val expected = chiselTypeOf(dut.io.commit.bits.fields).zipWithIndex.map{
           case (cb, i) =>
             cb.Lit(
-              _.bits.data -> intToUInt(writeData((config.issueWidth * j) + i)),
-              _.bits.rd -> issue(i).bits.rd,
-              _.bits.target -> intToUInt(writeTargets((config.issueWidth * j) + i)),
-              _.bits.wb -> issue(i).bits.wb,
-              _.bits.branched -> issue(i).bits.branched,
-              _.valid -> issue(i).valid,
+              _.data.result -> intToUInt(writeData((config.issueWidth * j) + i)),
+              _.data.target -> intToUInt(writeTargets((config.issueWidth * j) + i)),
+              _.data.valid -> true.B,
+              _.issue.rd -> issue(i).rd,
+              _.issue.wb -> issue(i).wb,
+              _.issue.branched -> issue(i).branched,
+              _.issue.valid -> issue(i).valid,
             )
         }
         commit(expected)
@@ -124,7 +122,7 @@ class ReorderBufferTester extends AnyFlatSpec with ChiselScalatestTester with Co
 
       // Issue      
       while (dut.io.issue.ready.peekBoolean()) {
-        val data = Seq.fill(config.issueWidth)(reorderBufferEntry(Random.nextInt(), Random.nextInt(), Random.nextInt(bitWidthToUIntMax(dut.io.issue.bits.head.bits.rd.getWidth).toInt + 1), Random.nextInt(bitWidthToUIntMax(dut.io.issue.bits.head.bits.wb.getWidth).toInt + 1), Random.nextBoolean(), Random.nextBoolean()))
+        val data = Seq.fill(config.issueWidth)(issueBus(Random.nextInt(bitWidthToUIntMax(dut.io.issue.bits.fields.head.rd.getWidth).toInt + 1), Random.nextInt(bitWidthToUIntMax(dut.io.issue.bits.fields.head.wb.getWidth).toInt + 1), Random.nextBoolean(), Random.nextBoolean()))
         issue(data)
         issues.enqueue(data)
       }

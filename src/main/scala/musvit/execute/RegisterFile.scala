@@ -25,6 +25,7 @@ class RegisterFileIO(config: MusvitConfig) extends Bundle {
   val write = Vec(config.issueWidth, new RegisterFileWritePort(config))
   val ecall = Input(Bool())
   val exit  = Output(Bool())
+  val printReg = Output(UInt(WORD_WIDTH.W))
 }
 
 class RegisterFile(config: MusvitConfig) extends Module with ControlValues {
@@ -61,6 +62,8 @@ class RegisterFile(config: MusvitConfig) extends Module with ControlValues {
 
   val a0 = rf(10)
   val a7 = rf(17)
+  val printReg = RegInit(0.U(WORD_WIDTH.W))
+  io.printReg := printReg
 
   io.exit := false.B
 
@@ -68,6 +71,7 @@ class RegisterFile(config: MusvitConfig) extends Module with ControlValues {
     switch(a7) {
       is (0.U) {
         printf(p"${Decimal(a0)}\n")
+        printReg := a0
       }
       is (3.U) {
         printRegs()

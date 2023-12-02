@@ -16,6 +16,7 @@ case class MusvitConfig(
     ramAddr: Long = 0x00001000L,    // Start address of RAM
     instQueueEntries: Int = 8,      // Number of entries in instruction queue
     robEntries: Int = 16,           // Number of entries in ROB
+    btbEntries: Int = 8,            // Number of entries in BTB
     aluNum: Int = 2,                // Number of ALU units
     mulNum: Int = 1,                // Number of multiply units
     divNum: Int = 1,                // Number of division units

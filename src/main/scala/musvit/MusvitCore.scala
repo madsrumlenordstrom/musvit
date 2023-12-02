@@ -11,6 +11,7 @@ import utility.Constants._
 class MusvitCoreIO(config: MusvitConfig) extends Bundle {
   val read = Flipped(new MusvitROMIO(config))
   val exit = Output(Bool())
+  val printReg = Output(UInt(WORD_WIDTH.W))
 }
 
 class MusvitCore(config: MusvitConfig) extends Module {
@@ -25,6 +26,7 @@ class MusvitCore(config: MusvitConfig) extends Module {
   backend.io.mop <> frontend.io.mop
 
   io.exit := backend.io.exit
+  io.printReg := backend.io.printReg
 }
 
 object MusvitCore {

@@ -8,20 +8,26 @@ import musvit.fetch.FetchPacket
 import utility.Constants._
 import utility.Functions._
 import utility.OptionsParser
+import musvit.execute.OperandSupplier
+import io.MultiplexedSevenSegmentDriver
 
 class MusvitIO(config: MusvitConfig) extends Bundle {
-  val temp = Output(new FetchPacket(config))
+  val seg = UInt(7.W)
+  val an = UInt(4.W)
 }
 
 class Musvit(config: MusvitConfig) extends Module {
   val io = IO(new MusvitIO(config))
 
   val rom = MusvitROM(config)
-  val musvitCore = MusvitCore(config)
+  val core = MusvitCore(config)
 
-  rom.io <> musvitCore.io.instMem
-  
-  io.temp := musvitCore.io.temp
+  core.io.read <> rom.io
+
+  val sevSeg = Module(new MultiplexedSevenSegmentDriver(4, config.clockFrequency, true, true, true))
+  sevSeg.io.value := core.io.printReg
+  io.an := sevSeg.io.segSel
+  io.seg := sevSeg.io.segment
 }
 
 object MusvitMain extends App {
