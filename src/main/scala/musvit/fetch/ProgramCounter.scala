@@ -1,8 +1,9 @@
 package musvit.fetch
 
 import chisel3._
+import chisel3.util._
+
 import utility.Constants._
-import chisel3.util.RegEnable
 import musvit.MusvitConfig
 
 class ProgramCounterWritePort extends Bundle {
@@ -10,20 +11,32 @@ class ProgramCounterWritePort extends Bundle {
   val data = UInt(ADDR_WIDTH.W)
 }
 
-class ProgramCounterIO extends Bundle {
+class ProgramCounterIO(config: MusvitConfig) extends Bundle {
   val enable     = Input(Bool())
+  val branch     = Input(new BranchTargetBufferWritePort(config))
   val pc         = Output(UInt(ADDR_WIDTH.W))
-  val write      = Input(new ProgramCounterWritePort)
+  val branched   = Output(Vec(config.issueWidth, Bool()))
 }
 
 class ProgramCounter(config: MusvitConfig) extends Module {
-  val io = IO(new ProgramCounterIO)
+  val io = IO(new ProgramCounterIO(config))
 
   val nextPC = Wire(UInt(ADDR_WIDTH.W))
 
-  val pcReg = RegEnable(nextPC, config.resetPC.U, io.enable || io.write.en)
+  val pcReg = RegEnable(nextPC, config.resetPC.U, io.enable || io.branch.en)
+
+  // Branch target buffer
+  val btb = BranchTargetBuffer(config)
+  btb.io.write <> io.branch
+  btb.io.read.pc := pcReg
+  io.branched := Mux(btb.io.read.target.valid && !io.branch.en,
+  VecInit(UIntToOH(btb.io.read.chosen).asBools),
+  VecInit.fill(config.issueWidth)(false.B))
   
-  nextPC := Mux(io.write.en, io.write.data, pcReg + (config.issueWidth * BYTES_PER_INST).U)
+  nextPC := MuxCase(pcReg + (config.issueWidth * BYTES_PER_INST).U, Seq(
+    (io.branch.en) -> (io.branch.target),
+    (btb.io.read.target.valid) -> (btb.io.read.target.bits)
+  ))
 
   io.pc := pcReg
 }

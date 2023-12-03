@@ -22,7 +22,7 @@ class FrontendTester extends AnyFlatSpec with ChiselScalatestTester {
 
       val issues = Queue[Seq[UInt]]()
 
-      dut.io.pc.en.poke(false.B)
+      dut.io.branch.en.poke(false.B)
 
       def issueInstructions(insts: Seq[UInt]): Unit = {
         dut.io.read.data.valid.poke(true.B)

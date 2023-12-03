@@ -5,7 +5,7 @@ import chisel3.util._
 import chisel3.experimental.BundleLiterals._
 
 import musvit.MusvitConfig
-import musvit.fetch.ProgramCounterWritePort
+import musvit.fetch.BranchTargetBufferWritePort
 import musvit.fetch.MicroOperationPacket
 import musvit.common.ControlValues
 import utility.Constants._
@@ -15,7 +15,7 @@ import utility.FunctionalUnitArbiter
 import utility.ValidateData
 
 class BackendIO(config: MusvitConfig) extends Bundle {
-  val pc    = Output(new ProgramCounterWritePort())
+  val branch   = Output(new BranchTargetBufferWritePort(config))
   val flush = Output(Bool())
   val exit  = Output(Bool())
   val printReg = Output(UInt(WORD_WIDTH.W))
@@ -33,7 +33,7 @@ class Backend(config: MusvitConfig) extends Module with ControlValues {
   val cdbs = Seq.fill(config.issueWidth)(Wire(Valid(CommonDataBus(config))))
   
   val oprSup = Module(new OperandSupplier(config))
-  io.pc <> oprSup.io.pc
+  io.branch <> oprSup.io.branch
   io.flush <> oprSup.io.flush
   io.exit := oprSup.io.exit
   io.printReg := oprSup.io.printReg

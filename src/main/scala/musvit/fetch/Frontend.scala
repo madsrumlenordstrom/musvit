@@ -27,10 +27,10 @@ class MicroOperationPacket(config: MusvitConfig) extends Bundle {
 }
 
 class FrontendIO(config: MusvitConfig) extends Bundle {
-  val read = Flipped(new MusvitROMIO(config))
-  val pc = Input(new ProgramCounterWritePort())
-  val flush = Input(Bool())
-  val mop = Decoupled(new MicroOperationPacket(config))
+  val read   = Flipped(new MusvitROMIO(config))
+  val branch = Input(new BranchTargetBufferWritePort(config))
+  val flush  = Input(Bool())
+  val mop    = Decoupled(new MicroOperationPacket(config))
 }
 
 class Frontend(config: MusvitConfig) extends Module {
@@ -40,7 +40,7 @@ class Frontend(config: MusvitConfig) extends Module {
   // Program counter
   val pc = ProgramCounter(config)
   pc.io.enable := fp.fire
-  pc.io.write <> io.pc
+  pc.io.branch <> io.branch
   
   // Instruction memory
   io.read.addr := pc.io.pc
@@ -50,7 +50,7 @@ class Frontend(config: MusvitConfig) extends Module {
   fp.valid := io.read.data.valid && !io.flush
   fp.bits.insts <> io.read.data.bits
   fp.bits.pc := pc.io.pc
-  fp.bits.branched := VecInit(Seq.fill(config.issueWidth)(false.B)) // TODO
+  fp.bits.branched <> pc.io.branched
 
   // Instruction queue
   val iq = Module(new InstructionQueue(config))

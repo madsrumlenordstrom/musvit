@@ -29,6 +29,8 @@ TESTTARGET ?= $(TOPPKG).$(TOPMOD)
 APPTARGET  ?=
 BOARD      ?=
 CLOCKFREQ  ?=
+WAVETARGET ?=
+WAVECONFIG ?=
 
 # For SystemVerilog generation
 ROMFILE     = $(SWDIR)/build/$(APPTARGET).bin
@@ -78,6 +80,10 @@ test: $(SRCS) $(TESTS)
 testall: $(SRCS) $(TESTS)
 	$(SBT) $(SBTFLAGS) test
 
+.PHONY: wave
+wave:
+	$(GTKWAVE) $(WAVETARGET) $(WAVECONFIG) &
+
 # Create a file with random data (useful for testing)
 random:
 	dd if=/dev/random of=random count=8
@@ -114,7 +120,9 @@ show:
 	@echo 'RTLFILE     :' $(RTLFILE)
 	@echo 'MAINTARGET  :' $(MAINTARGET)
 	@echo 'TESTTARGET  :' $(TESTTARGET)
-	@echo 'APPTARGET  :' $(APPTARGET)
+	@echo 'WAVETARGET  :' $(WAVETARGET)
+	@echo 'WAVECONFIG  :' $(WAVECONFIG)
+	@echo 'APPTARGET   :' $(APPTARGET)
 	@echo 'BOARD       :' $(BOARD)
 	@echo 'FIRRTLOPTS  :' $(FIRRTLOPTS)
 	@echo 'FIRTOOLOPTS :' $(FIRTOOLOPTS)

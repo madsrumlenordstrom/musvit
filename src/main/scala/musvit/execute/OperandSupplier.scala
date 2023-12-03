@@ -8,7 +8,7 @@ import utility.ValidateData
 import musvit.MusvitConfig
 import musvit.common.ControlValues
 import musvit.execute.IssueSource
-import musvit.fetch.ProgramCounterWritePort
+import musvit.fetch.BranchTargetBufferWritePort
 
 class OperandSupplierReadPort(config: MusvitConfig) extends Bundle {
   val rs1     = Input(UInt(REG_ADDR_WIDTH.W))
@@ -19,12 +19,12 @@ class OperandSupplierReadPort(config: MusvitConfig) extends Bundle {
 }
 
 class OperandSupplierIO(config: MusvitConfig) extends Bundle {
-  val issue = Flipped(Decoupled(new ReorderBufferIssuePort(config)))
-  val read  = Vec(config.issueWidth, new OperandSupplierReadPort(config))
-  val cdb   = Vec(config.issueWidth, Flipped(Valid(CommonDataBus(config))))
-  val pc    = Output(new ProgramCounterWritePort())
-  val flush = Output(Bool())
-  val exit  = Output(Bool())
+  val issue    = Flipped(Decoupled(new ReorderBufferIssuePort(config)))
+  val read     = Vec(config.issueWidth, new OperandSupplierReadPort(config))
+  val cdb      = Vec(config.issueWidth, Flipped(Valid(CommonDataBus(config))))
+  val branch   = Output(new BranchTargetBufferWritePort(config))
+  val flush    = Output(Bool())
+  val exit     = Output(Bool())
   val printReg = Output(UInt(WORD_WIDTH.W))
 }
 
@@ -34,8 +34,9 @@ class OperandSupplier(config: MusvitConfig) extends Module with ControlValues {
   val regMap  = Module(new RegisterMapTable(config))
   val rob     = Module(new ReorderBuffer(config))
   val rf      = Module(new RegisterFile(config))
-  val pcArb   = Module(new Arbiter(new ProgramCounterWritePort(), config.issueWidth))
+  val pcArb   = Module(new Arbiter(new BranchTargetBufferWritePort(config), config.issueWidth))
 
+  val pcs           = Seq.tabulate(config.issueWidth)( (i) => rob.io.commit.bits.pc + (i * 4).U)
   val branches      = Seq.fill(config.issueWidth)(Wire(Bool()))
   val isEcall       = Seq.fill(config.issueWidth)(Wire(Bool()))
   val canCommit     = Seq.fill(config.issueWidth)(Wire(Bool()))
@@ -51,7 +52,7 @@ class OperandSupplier(config: MusvitConfig) extends Module with ControlValues {
   rob.io.cdb <> io.cdb
   rob.io.commit.ready := allCommitted
   pcArb.io.out.ready := true.B // TODO figure this out
-  io.pc <> pcArb.io.out.bits
+  io.branch <> pcArb.io.out.bits
   rf.io.ecall := (VecInit(canCommit).asUInt & VecInit(isEcall).asUInt).orR
   io.exit := rf.io.exit
   io.printReg := rf.io.printReg
@@ -103,9 +104,11 @@ class OperandSupplier(config: MusvitConfig) extends Module with ControlValues {
     rf.io.write(i).en := canCommit(i) && rob.io.commit.bits.fields(i).issue.wb === WB.REG_OR_JMP
 
     // Connect targets to PC arbiter
-    pcArb.io.in(i).bits.data  := rob.io.commit.bits.fields(i).data.target
-    pcArb.io.in(i).valid      := (canCommit(i) && branches(i)).asBool
-    pcArb.io.in(i).bits.en    := (canCommit(i) && branches(i)).asBool
+    pcArb.io.in(i).bits.target := rob.io.commit.bits.fields(i).data.target
+    pcArb.io.in(i).bits.pc     := pcs(i)
+    pcArb.io.in(i).bits.taken  := rob.io.commit.bits.fields(i).issue.branched
+    pcArb.io.in(i).bits.en     := (canCommit(i) && branches(i)).asBool
+    pcArb.io.in(i).valid       := (canCommit(i) && branches(i)).asBool
 
     // Read operand 1
     io.read(i).src1.data := MuxCase(

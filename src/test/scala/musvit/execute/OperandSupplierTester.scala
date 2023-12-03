@@ -104,21 +104,21 @@ class OperandSupplierTester extends AnyFlatSpec with ChiselScalatestTester with 
       // Test branch
       val nonBranched = Seq.fill(config.issueWidth)(issueBus(0, WB.PC.value.toInt, false, true))
       issue(nonBranched)
-      dut.io.pc.en.expect(false.B)
+      dut.io.branch.en.expect(false.B)
       for (i <- 0 until config.issueWidth) {
         write(i, i % 2, writeTargets(i))
       }
       dut.clock.step(1)
-      dut.io.pc.en.expect(false.B)
+      dut.io.branch.en.expect(false.B)
 
       val branched = Seq.fill(config.issueWidth)(issueBus(0, WB.PC.value.toInt, true, true))
       issue(branched)
-      dut.io.pc.en.expect(false.B)
+      dut.io.branch.en.expect(false.B)
       for (i <- 0 until config.issueWidth) {
         write(i, i % 2, writeTargets(i))
       }
       dut.clock.step(1)
-      dut.io.pc.en.expect(false.B)
+      dut.io.branch.en.expect(false.B)
     }
   }
 }
