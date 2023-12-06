@@ -1,6 +1,6 @@
 # Musvit
 
-A FPGA friendly dynamic multiple issue processor written in [Chisel](https://www.chisel-lang.org/).
+A FPGA friendly dynamic multiple issue RISC-V processor written in [Chisel](https://www.chisel-lang.org/).
 The name of the processor is Musvit which is the Danish word for the bird great tit.
 
 ## Dependencies
@@ -9,6 +9,7 @@ Make sure you have the following dependencies installed:
 * [SBT](https://www.scala-sbt.org/download.html)
 * [JDK](https://adoptium.net/)
 * [Firtool](https://github.com/llvm/circt/releases)
+* [RISC-V](https://github.com/riscv-collab/riscv-gnu-toolchain)
 
 ## Configuring Musvit
 The configuration of Musvit is defined in ```src/main/scala/musvit/MusvitConfig.scala```:
@@ -61,6 +62,8 @@ To compile all software do:
 ```shell
 make -C sw/
 ```
+Note that on some systems the RISC-V toolchain prefix needs to be changed.
+This can be done a ```sw/config.mk``` and the prefix could for exampel be set to ```TOOLCHAIN_PREFIX=riscv64-linux-gnu-```.
 
 To quickly see waveforms from a test do:
 ```shell
