@@ -76,7 +76,7 @@ class OperandSupplier(config: MusvitConfig) extends Module with ControlValues {
     // Check branch
     branches(i) := MuxCase(false.B, Seq(
       (rob.io.commit.bits.fields(i).issue.wb === WB.PC)  -> (rob.io.commit.bits.fields(i).issue.branched ^ rob.io.commit.bits.fields(i).data.result(0)),
-      (rob.io.commit.bits.fields(i).issue.wb === WB.JMP) -> true.B,
+      (rob.io.commit.bits.fields(i).issue.wb === WB.JMP) -> (rob.io.commit.bits.fields(i).issue.branched.unary_!),
     )) && isValid(i) && canCommit(i)
 
     // Issue condition

@@ -12,7 +12,7 @@ import musvit.MusvitConfig
 class DecodeTester extends AnyFlatSpec with ChiselScalatestTester {
 
   // Test configuration
-  val testFile = "sw/build/add.bin"
+  val testFile = "random"
   val width = INST_WIDTH
   val words = fileToUInts(testFile, width)
   val config = MusvitConfig.default

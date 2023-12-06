@@ -21,6 +21,7 @@ DIRS        = $(SRCDIR) $(TESTDIR) $(RTLDIR)
 # Sources
 SRCS        = $(shell find $(SRCDIR) -name '*.scala')
 TESTS       = $(shell find $(TESTDIR) -name '*.scala')
+RANDOM 		= random
 
 # Targets (configured in config.mk)
 RTLFILE    ?= $(RTLDIR)/$(TOPMOD).sv
@@ -72,12 +73,12 @@ program: $(RTLFILE)
 
 # Run specific test
 .PHONY: test
-test: $(SRCS) $(TESTS)
+test: $(SRCS) $(TESTS) $(ROMFILE) $(RANDOM)
 	$(SBT) $(SBTFLAGS) testOnly "$(TESTTARGET)"
 
 # Run all tests
 .PHONY: testall
-testall: $(SRCS) $(TESTS)
+testall: $(SRCS) $(TESTS) $(ROMFILE) $(RANDOM)
 	$(SBT) $(SBTFLAGS) test
 
 .PHONY: wave
@@ -85,8 +86,8 @@ wave:
 	$(GTKWAVE) $(WAVETARGET) $(WAVECONFIG) &
 
 # Create a file with random data (useful for testing)
-random:
-	dd if=/dev/random of=random count=8
+$(RANDOM):
+	dd if=/dev/random of=$(RANDOM) count=8
 
 # Shutdown SBT server
 .PHONY: shutdown

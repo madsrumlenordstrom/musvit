@@ -35,7 +35,7 @@ class BinaryToBCDTester extends AnyFlatSpec with ChiselScalatestTester {
 class MultiplexedSevenSegmentDriverTester extends AnyFlatSpec with ChiselScalatestTester {
 
   "MultiplexedSevenSegmentDriver" should "pass" in {
-    test(new MultiplexedSevenSegmentDriver(4, 10000, false, false, true)).withAnnotations(Seq(WriteVcdAnnotation)) {
+    test(new MultiplexedSevenSegmentDriver(4, 100000, false, false, true)).withAnnotations(Seq(WriteVcdAnnotation)) {
       dut =>
         dut.clock.setTimeout(0)
         def testNumber(n: Int): Unit = {

@@ -10,7 +10,7 @@ import utility.RisingEdge
 import utility.Negate
 import utility.SignExtend
 
-class Multiplier(config: MusvitConfig, cycles: Int = 8) extends FunctionalUnit(config) {
+class Multiplier(config: MusvitConfig, cycles: Int = 4) extends FunctionalUnit(config) {
 
   override val fuType = FU.MUL.value.U
 
