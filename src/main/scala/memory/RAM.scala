@@ -77,7 +77,7 @@ class MusvitRAM(config: MusvitConfig) extends Module with ControlValues {
     BitPat("b????")
   )
 
-  val maskVec = VecInit(decoder(EspressoMinimizer, io.op ## byteOffset, maskTable).asBools)
+  val maskVec = VecInit(decoder(minimizer = QMCMinimizer, io.op ## byteOffset, maskTable).asBools)
   
   when (io.en && io.op === Mem.STORE) {
     mem.write(addr, writeData, maskVec.toSeq)
