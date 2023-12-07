@@ -15,7 +15,7 @@ class DecodeTester extends AnyFlatSpec with ChiselScalatestTester {
   val testFile = "random"
   val width = INST_WIDTH
   val words = fileToUInts(testFile, width)
-  val config = MusvitConfig.light
+  val config = MusvitConfig.small
 
   "Decode" should "pass" in {
     test(new Decode(config)).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>

@@ -30,7 +30,7 @@ class ProgramCounter(config: MusvitConfig) extends Module {
   btb.io.write <> io.branch
   btb.io.read.pc := pcReg
   io.branched := Mux(btb.io.read.target.valid && !io.branch.en,
-  VecInit(UIntToOH(btb.io.read.chosen).asBools),
+  VecInit(UIntToOH(btb.io.read.chosen, config.issueWidth).asBools),
   VecInit.fill(config.issueWidth)(false.B))
   
   nextPC := MuxCase(pcReg + (config.issueWidth * BYTES_PER_INST).U, Seq(

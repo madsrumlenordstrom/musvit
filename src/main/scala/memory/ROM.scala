@@ -43,8 +43,8 @@ class MusvitROM(config: MusvitConfig) extends Module {
     )
   if (!isPow2(config.issueWidth))
     throw new Error("issueWidth must be a power of 2")
-  if (config.issueWidth < 2)
-    throw new Error("issueWidth must be greater or equal to 2")
+  if (config.issueWidth < 1)
+    throw new Error("issueWidth must be greater or equal to 1")
 
   // Split contents into multiple content sequences
   val contentsSeqs = contents.zipWithIndex
@@ -60,7 +60,10 @@ class MusvitROM(config: MusvitConfig) extends Module {
   val relaAddr   = io.addr - config.romAddr.U
   val byteOffset = relaAddr(log2Up(BYTES_PER_INST) - 1, 0)
   val shamt      = relaAddr(log2Up(config.issueWidth) + byteOffset.getWidth - 1, byteOffset.getWidth)
-  val addr       = relaAddr(relaAddr.getWidth - 1, shamt.getWidth + byteOffset.getWidth)
+  val addr       = (if
+    (config.issueWidth == 1) relaAddr(relaAddr.getWidth - 1, byteOffset.getWidth)
+    else
+      relaAddr(relaAddr.getWidth - 1, shamt.getWidth + byteOffset.getWidth))
 
   // No support for byte indexing
   assert(byteOffset === 0.U, "Bytes indexing in MusvitROM is not supported")

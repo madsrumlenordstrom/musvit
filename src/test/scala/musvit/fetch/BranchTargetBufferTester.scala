@@ -14,7 +14,7 @@ import scala.util.Random
 class BranchTargetBufferTester extends AnyFlatSpec with ChiselScalatestTester {
 
   // Test configuration
-  val config = MusvitConfig.light
+  val config = MusvitConfig.small
   val maxPC = 0xFF
 
   "BranchTargetBuffer" should "pass" in {

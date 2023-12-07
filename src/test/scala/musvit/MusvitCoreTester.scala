@@ -11,7 +11,7 @@ import utility.Functions._
 
 class MusvitCoreTester extends AnyFlatSpec with ChiselScalatestTester {
   // Test configuration
-  val config = MusvitConfig.light
+  val config = MusvitConfig.tiny
   val issueWidth = config.issueWidth
   val nop = 0x13.U(WORD_WIDTH.W)
   val testFile = "sw/build/fibonacci.bin"
@@ -26,6 +26,26 @@ class MusvitCoreTester extends AnyFlatSpec with ChiselScalatestTester {
     clk.step(n)
     steps += n
   }
+
+  def pprint(obj: Any, depth: Int = 0, paramName: Option[String] = None): Unit = {
+
+    val indent = "  " * depth
+    val prettyName = paramName.fold("")(x => s"$x: ")
+    val ptype = obj match { case _: Iterable[Any] => "" case obj: Product => obj.productPrefix case _ => obj.toString }
+
+    println(s"$indent$prettyName$ptype")
+
+    obj match {
+      case seq: Iterable[Any] =>
+        seq.foreach(pprint(_, depth + 1))
+      case obj: Product =>
+        (obj.productIterator zip obj.productElementNames)
+          .foreach { case (subObj, paramName) => pprint(subObj, depth + 1, Some(paramName)) }
+      case _ =>
+    }
+  }
+
+  pprint(config)
 
   "MusvitCore" should "pass" in {
     test(new MusvitCore(config)).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>

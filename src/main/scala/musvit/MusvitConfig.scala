@@ -23,7 +23,8 @@ case class MusvitConfig(
 // TODO use BigInt instead of Int and Long for memory related stuff
 
 object MusvitConfig {
-    val light  = MusvitConfig(issueWidth = 2, robEntries = 8,  btbEntries = 8,  instQueueEntries = 8,  aluNum = 2, mulNum = 1, divNum = 1)
-    val medium = MusvitConfig(issueWidth = 2, robEntries = 16, btbEntries = 16, instQueueEntries = 16, aluNum = 4, mulNum = 2, divNum = 2)
-    val heavy  = MusvitConfig(issueWidth = 4, robEntries = 32, btbEntries = 32, instQueueEntries = 32, aluNum = 8, mulNum = 4, divNum = 4)
+    val tiny   = MusvitConfig(issueWidth = 1, robEntries = 4,  btbEntries = 4,  instQueueEntries = 4,  aluNum = 1, mulNum = 1, divNum = 1, romFile = "sw/build/fibonacci-fpga.bin", clockFrequency = 100000000)
+    val small  = MusvitConfig(issueWidth = 2, robEntries = 8,  btbEntries = 8,  instQueueEntries = 8,  aluNum = 2, mulNum = 1, divNum = 1, romFile = "sw/build/fibonacci-fpga.bin", clockFrequency = 100000000)
+    val medium = MusvitConfig(issueWidth = 2, robEntries = 16, btbEntries = 16, instQueueEntries = 16, aluNum = 4, mulNum = 2, divNum = 2, romFile = "sw/build/fibonacci-fpga.bin", clockFrequency = 100000000)
+    val large  = MusvitConfig(issueWidth = 4, robEntries = 16, btbEntries = 16, instQueueEntries = 16, aluNum = 4, mulNum = 2, divNum = 2, romFile = "sw/build/fibonacci-fpga.bin", clockFrequency = 100000000)
 }

@@ -13,7 +13,7 @@ import utility.TestingFunctions._
 import musvit.common.ControlValues
 
 class FunctionalUnitTester extends AnyFlatSpec with ChiselScalatestTester with ControlValues {
-  val config = MusvitConfig.light
+  val config = MusvitConfig.small
   val dummyTag = 0
 
   val iterations = 100
