@@ -9,7 +9,7 @@ Make sure you have the following dependencies installed:
 * [SBT](https://www.scala-sbt.org/download.html)
 * [JDK](https://adoptium.net/)
 * [Firtool](https://github.com/llvm/circt/releases)
-* [RISC-V](https://github.com/riscv-collab/riscv-gnu-toolchain)
+* [RISC-V toolchain](https://github.com/riscv-collab/riscv-gnu-toolchain)
 
 ## Configuring Musvit
 The configuration of Musvit is defined in ```src/main/scala/musvit/MusvitConfig.scala```:

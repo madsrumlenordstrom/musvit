@@ -11,13 +11,13 @@ import utility.Functions._
 
 class MusvitCoreTester extends AnyFlatSpec with ChiselScalatestTester {
   // Test configuration
-  val issueWidth = 2
+  val config = MusvitConfig.light
+  val issueWidth = config.issueWidth
   val nop = 0x13.U(WORD_WIDTH.W)
   val testFile = "sw/build/fibonacci.bin"
   val wordsLength = fileToUInts(testFile, INST_WIDTH).length
   val paddings = if (wordsLength % issueWidth == 0) 0 else wordsLength + (issueWidth - (wordsLength % issueWidth))
   val words = fileToUInts(testFile, INST_WIDTH).padTo(paddings, nop)
-  val config = MusvitConfig(issueWidth = issueWidth, instQueueEntries = words.length)
   
   var steps = 0
   val maxSteps = 1000

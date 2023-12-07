@@ -52,9 +52,10 @@ class Backend(config: MusvitConfig) extends Module with ControlValues {
   // Some values for keeping track of issuing
   val fuReady       = Seq.fill(config.issueWidth)(Wire(Bool()))
   val canIssue      = Seq.fill(config.issueWidth)(Wire(Bool()))
+  val dontIssue     = Seq.fill(config.issueWidth)(Wire(Bool()))
   val hasIssued     = Seq.fill(config.issueWidth)(Reg(Bool()))
   val isValid       = Seq.fill(config.issueWidth)(Wire(Bool()))
-  val allIssued     = (VecInit(canIssue).asUInt | VecInit(hasIssued).asUInt).andR || !mopRegValid
+  val allIssued     = (VecInit(canIssue).asUInt | VecInit(hasIssued).asUInt | VecInit(dontIssue).asUInt).andR || !mopRegValid
   io.mop.ready := allIssued
 
   mopRegValid := Mux(io.mop.fire, true.B, !allIssued) && !io.flush
@@ -99,8 +100,11 @@ class Backend(config: MusvitConfig) extends Module with ControlValues {
 
   // Issue 
   for (i <- 0 until config.issueWidth) {
+    // Dont issue when ealier instruction has branched (this logic should be moved to frontend)
+    dontIssue(i) := (if (i == 0) false.B else mopReg.microOps.map(_.branched).dropRight(config.issueWidth - i).reduce(_ || _))
+
     // Instruction valid condition
-    isValid(i) := mopRegValid && mopReg.microOps(i).ctrl.valid && !hasIssued(i) && !io.flush
+    isValid(i) := mopRegValid && mopReg.microOps(i).ctrl.valid && !hasIssued(i) && !dontIssue(i) && !io.flush
 
     // Check if instruction has funcitonal unit assigned or previously assigned one
     fuReady(i) := fusArbs.map(_.io.in(i).fire).reduce(_ || _)
