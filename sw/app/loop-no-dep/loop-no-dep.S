@@ -2,13 +2,13 @@
 .global main
 main:
     li x10, 0            # a
-    li x11, 7            # x
-    li x12, 0            # y
+    li x11, 0xCAFEBABE   # b
+    li x12, 0xDEADBEEF   # c
     li x13, 64           # iterations
 loop:
-    mul  x14, x11, x10   # x * a.
-    add  x12, x14, x12   # x * a + y
-    addi x10, x10, 1     # a = a + 1
+    addi x10, x10, 1
+    and  x14, x11, x12
+    xor  x15, x11, x12
     blt  x10, x13, loop  # a < 64
     li   a7,  3
     ecall
