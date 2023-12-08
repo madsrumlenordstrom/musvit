@@ -5,11 +5,16 @@ The name of the processor is Musvit which is the Danish word for the bird great 
 
 ## Dependencies
 This project assumes a Unix like operating system.
-Make sure you have the following dependencies installed:
+Make sure you have the following dependencies installed.
+
+### For development
 * [SBT](https://www.scala-sbt.org/download.html)
 * [JDK](https://adoptium.net/)
-* [Firtool](https://github.com/llvm/circt/releases)
 * [RISC-V toolchain](https://github.com/riscv-collab/riscv-gnu-toolchain)
+
+### For synthesis
+* [Firtool](https://github.com/llvm/circt/releases)
+* [F4PGA](https://f4pga.org/)
 
 ## Configuring Musvit
 The configuration of Musvit is defined in ```src/main/scala/musvit/MusvitConfig.scala```:
@@ -75,7 +80,7 @@ make test wave
 ```
 
 ## Generating SystemVerilog from Chisel
-Right now most synthesis tools only accepts less abstract HDLs like SystemVerilog.
+Most synthesis tools accepts less abstract HDLs like SystemVerilog.
 This means the Chisel code needs to be converted to SystemVerilog representation in order to synthesize it.
 This can be done with the command:
 
@@ -104,7 +109,7 @@ make synth
 
 This will take some time but will generate the bitstream required for programming the FPGA.
 
-When the bitstream has been generated plug in your Basys3 with a USB cable and run:
+When the bitstream has been generated plug in your Basys 3 with a USB cable and run:
 ```shell
 make program
 ```
