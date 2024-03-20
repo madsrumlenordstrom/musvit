@@ -16,6 +16,12 @@ Make sure you have the following dependencies installed.
 * [Firtool](https://github.com/llvm/circt/releases)
 * [F4PGA](https://f4pga.org/)
 
+### Nix users
+If you use the [Nix](https://github.com/NixOS/nix) package manager you can use the Flake provided in this repository to install all dependencies in a development environment:
+```shell
+nix develop
+```
+
 ## Configuring Musvit
 The configuration of Musvit is defined in ```src/main/scala/musvit/MusvitConfig.scala```:
 ```scala

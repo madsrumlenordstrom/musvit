@@ -10,15 +10,17 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs { inherit system; };
+        packages = with pkgs; [
+          sbt
+          gnumake
+          verilator
+          coreboot-toolchain.riscv
+          gtkwave
+          circt
+        ];
       in {
-        devShell = pkgs.mkShell {
-          buildInputs = with pkgs; [
-            sbt
-            gnumake
-            verilator
-            coreboot-toolchain.riscv
-            gtkwave
-          ];
+        devShells = {
+          default = pkgs.mkShell { name = "musvit"; inherit packages; };
         };
       });
 }
